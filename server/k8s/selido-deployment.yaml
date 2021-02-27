@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: selido
+spec:
+  selector:
+    matchLabels:
+      app: selido
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: selido
+    spec:
+      containers:
+      - image: eu.gcr.io/instant-theater-300821/selido:latest
+        name: server
+        ports:
+        - containerPort: 3219
+          name: express

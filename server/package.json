@@ -1,0 +1,17 @@
+{
+  "name": "selido-server",
+  "version": "0.1.0",
+  "description": "Server-side book library",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Eirik Tobiassen",
+  "dependencies": {
+    "assert": "2.0.0",
+    "express": "4.17.1",
+    "mongodb": "3.6.4",
+    "winston": "3.3.3"
+  }
+}
