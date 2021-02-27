@@ -1,2 +1,3 @@
 client/main.build
 server/node_modules
+server/error.log
