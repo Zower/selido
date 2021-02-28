@@ -1,49 +1,25 @@
-const MongoClient = require('mongodb').MongoClient;
-const assert = require('assert');
+'use strict';
+const mongoose = require('mongoose');
+const log = require('../logger/log.js');
 
-// Connection URL
-const url = 'mongodb://mongo:27017';
 
-// Database Name
-const dbName = 'myproject';
+module.exports = class SelidoDB {
+    constructor(url) {
+        this.url = 'mongodb://' + url + '/selido'
+    }
+    init() {
+        return new Promise((resolve, reject) => {
+            mongoose.connect(this.url, { useNewUrlParser: true, useUnifiedTopology: true }).catch(err => { reject('Failed to connect to mongodb, is mongod started? Error:\n' + err) });
+            this.db = mongoose.connection;
 
-// Use connect method to connect to the server
-// MongoClient.connect(url, function(err, client) {
-//   console.log(err);
-//   console.log("Connected successfully to server");
+            this.db.on('error', () => {
+                log.error('Lost connection to db..');
+            });
 
-//   const db = client.db(dbName);
+            this.db.once('open', () => {
+                resolve('Connected to db!')
+            });
+        })
 
-//   insertDocuments(db, function() {
-//     findDocuments(db, function() {
-//       client.close();
-//     });
-//   });
-// });
-
-// const findDocuments = function(db, callback) {
-//   // Get the documents collection
-//   const collection = db.collection('documents');
-//   // Find some documents
-//   collection.find({}).toArray(function(err, docs) {
-//     assert.equal(err, null);
-//     console.log("Found the following records");
-//     console.log(docs)
-//     callback(docs);
-//   });
-// }
-
-// const insertDocuments = function(db, callback) {
-//   // Get the documents collection
-//   const collection = db.collection('documents');
-//   // Insert some documents
-//   collection.insertMany([
-//     {a : 1}, {a : 2}, {a : 3}
-//   ], function(err, result) {
-//     assert.equal(err, null);
-//     assert.equal(3, result.result.n);
-//     assert.equal(3, result.ops.length);
-//     console.log("Inserted 3 documents into the collection");
-//     callback(result);
-//   });
-// }
+    }
+}
