@@ -29,11 +29,20 @@ def init(args):
 def set_endpoint(args):
     config = get_config()
 
-    url = args.url.split(':')
+    url_split = args.url.split(':')
+
+    # This is some jank shit, but https:// get split up so I'm merging them back together
+    url = []
+    url.append(url_split[0] + ':' + url_split[1])
+    if len(url_split) == 3:
+        url.append(url_split[2])
 
     try:
         config.set('Endpoint.url', url[0])
-        config.set('Endpoint.port', url[1])
+        if len(url) == 2:
+            config.set('Endpoint.port', url[1])
+        else:
+            config.set('Endpoint.port', "")
     except:
         print("Invalid url, Should be: Domain:port or IP:Port")
         exit()
@@ -70,7 +79,7 @@ def find(args):
     body = add_to_body(body, 'tags',  make_tags(args.tags))
     body = add_to_body(body, 'and_search', not args.or_search)
     body = add_to_body(body, 'all', args.all)
-    print(args.url)
+
     r = requests.post(args.url + '/find/', json=body)
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
@@ -128,13 +137,16 @@ def parse_response(response):  # Parse response as JSON
 
 
 def set_url(args):
-    copy = args
-    config = get_config()
-    copy.url = config.get('Endpoint.url')
-    port = config.get('Endpoint.port')
-    if port != '':
-        copy.url += ':' + port
-    return copy
+    if not args.url:
+        copy = args
+        config = get_config()
+        copy.url = config.get('Endpoint.url')
+        port = config.get('Endpoint.port')
+        if port != '':
+            copy.url += ':' + port
+        return copy
+    else:
+        return args
 
 
 def get_config():
