@@ -21,7 +21,7 @@ def init(args):
 
     config = get_config()
 
-    config.set('Endpoint.url', 'localhost')
+    config.set('Endpoint.url', 'http://localhost')
     config.set('Endpoint.port', '3912')
     config.save()
 
@@ -70,7 +70,7 @@ def find(args):
     body = add_to_body(body, 'tags',  make_tags(args.tags))
     body = add_to_body(body, 'and_search', not args.or_search)
     body = add_to_body(body, 'all', args.all)
-
+    print(args.url)
     r = requests.post(args.url + '/find/', json=body)
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
@@ -130,7 +130,7 @@ def parse_response(response):  # Parse response as JSON
 def set_url(args):
     copy = args
     config = get_config()
-    copy.url = 'http://' + config.get('Endpoint.url') + ':' + config.get(
+    copy.url = config.get('Endpoint.url') + ':' + config.get(
         'Endpoint.port')
     return copy
 

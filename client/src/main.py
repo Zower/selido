@@ -94,7 +94,7 @@ parser_conf_sub = parser_conf.add_subparsers(dest='action')
 parser_conf_sub.required = True
 parser_conf_action = parser_conf_sub.add_parser(
     'endpoint', aliases=['e', 'end'], help='Which endpoint to connect to')
-parser_conf_action.add_argument('URL', help='The URL to use as endpoint')
+parser_conf_action.add_argument('url', help='The URL to use as endpoint')
 parser_conf_action.set_defaults(func=commands.set_endpoint)
 
 
