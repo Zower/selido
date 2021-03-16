@@ -37,7 +37,7 @@ module.exports = class SelidoServer {
 
                     this.setHandlers()
 
-                    app.listen(this.port, () => {
+                    app.listen(this.port, "0.0.0.0", () => {
                         resolve('Selido server listening on port ' + this.port)
                     });
                 })

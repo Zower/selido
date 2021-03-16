@@ -173,44 +173,46 @@ module.exports = class SelidoDB {
         })
     }
 
-    //$all to avoid order in list
-
     find(tags, and_search, all = false) {
         return new Promise((resolve, reject) => {
             // check that tags exist
             const action = 'find'
+            // Return all resources
             if (all) {
                 Resource.find().exec().then(resources => {
                     if (resources.length == 0) {
                         resolve(new SelidoResponse(action, failed, 'No resources exist', 404))
                     }
-                    resolve(new SelidoResponse(action, success, 'Found resource(s)', 200, resources))
+                    resolve(new SelidoResponse(action, success, 'Found resource(s)', 200, prettyConvert(resources, true)))
                 }).catch(err => {
                     reject(new SelidoResponse(action, failed, 'Failed to find resources\nError: ' + err, 500))
                 })
 
             }
+            // No tags
             else if (tags.length == 0) {
                 resolve(new SelidoResponse(action, failed, 'No tags specified', 400))
             }
+            // Finds all resources that have all of the tags specified, but not all the possible tags
             else if (and_search) {
-                // Finds all resources that have all of the tags specified, but not all the possible tags
                 Resource.find({ tags: { $all: tags } })
                     .exec()
                     .then(resources => {
                         if (resources.length == 0) {
                             resolve(new SelidoResponse(action, failed, 'No resources with those tags', 404))
                         }
-                        resolve(new SelidoResponse(action, success, 'Found resource(s)', 200, resources))
+                        resolve(new SelidoResponse(action, success, 'Found resource(s)', 200, prettyConvert(resources, true)))
                     })
                     .catch(err => {
                         reject(new SelidoResponse(action, failed, 'Failed to find resources\nError: ' + err, 500))
                     })
             }
+            // One of the tags has to match
             else {
                 let to_find = []
                 let i = 0
-                // 
+                // Creates a list of objects (e.g. [{tags: {key: 'foo', value: 'bar'}}, {tags: {key: 'a', value: 'b'}}])
+                // from the tags sent in, so that mongo can filter on only some of them
                 tags.forEach(tag => {
                     to_find[i] = { tags: tag }
                     i++
@@ -221,7 +223,7 @@ module.exports = class SelidoDB {
                         if (resources.length == 0) {
                             resolve(new SelidoResponse(action, failed, 'No resources with those tags', 404))
                         }
-                        resolve(new SelidoResponse(action, success, 'Found resource(s)', 200, resources))
+                        resolve(new SelidoResponse(action, success, 'Found resource(s)', 200, prettyConvert(resources, true)))
                     })
                     .catch(err => {
                         reject(new SelidoResponse(action, failed, 'Failed to find resources\nError: ' + err, 500))
@@ -232,10 +234,19 @@ module.exports = class SelidoDB {
 
 }
 
-function prettyConvert(object) {
-    return {
-        id: object['_id'],
-        tags: object['tags']
+function prettyConvert(object, multiple = false) {
+    if (multiple) {
+        let send = []
+        for (const [index, obj] of object.entries()) {
+            send[index] = { id: obj._id, tags: obj.tags }
+        }
+        return send
+    }
+    else {
+        return [{
+            id: object['_id'],
+            tags: object['tags']
+        }]
     }
 }
 
