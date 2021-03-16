@@ -130,8 +130,10 @@ def parse_response(response):  # Parse response as JSON
 def set_url(args):
     copy = args
     config = get_config()
-    copy.url = config.get('Endpoint.url') + ':' + config.get(
-        'Endpoint.port')
+    copy.url = config.get('Endpoint.url')
+    port = config.get('Endpoint.port')
+    if port != '':
+        copy.url += ':' + port
     return copy
 
 
