@@ -9,20 +9,20 @@ parser = argparse.ArgumentParser(
 subparsers = parser.add_subparsers(dest='Initial command')
 subparsers.required = True
 
+#############################################
+# Online commands
 
 parser_add = subparsers.add_parser('add',
                                    aliases=['a'],
                                    help='Add a resource to selido')
-parser_add.add_argument('resource')
-parser_add.add_argument('-t', '--tags', help='Add tags alongside resource')
+parser_add.add_argument('tags', help='The tags to add')
 parser_add.set_defaults(func=commands.add)
 
 
 parser_get = subparsers.add_parser('get',
                                    aliases=['g'],
                                    help='Get resources from Selido server')
-parser_get.add_argument('resource')
-parser_get.add_argument('-n', '--name', help='Name of the object to get')
+parser_get.add_argument('id', help='The id to get')
 parser_get.add_argument(
     '-t',
     '--tags',
@@ -36,14 +36,14 @@ parser_tag_sub = parser_tag.add_subparsers(dest='action')
 parser_tag_sub.required = True
 parser_tag_add = parser_tag_sub.add_parser(
     'add', aliases=['a'], help='Add tags to resource')
-parser_tag_add.add_argument('resource', help='The resource to tag')
+parser_tag_add.add_argument('id', help='The id to tag')
 parser_tag_add.add_argument('tags', help='The tags to apply')
 parser_tag_add.set_defaults(func=commands.add_tags)
 
 parser_tag_del = parser_tag_sub.add_parser(
     'delete', aliases=['d', 'del'], help='Delete tags from resource')
 parser_tag_del.add_argument(
-    'resource', help='The resource to delete tags from')
+    'id', help='The id to delete tags from')
 parser_tag_del.add_argument('tags', help='The tags to delete')
 parser_tag_del.set_defaults(func=commands.del_tags)
 
@@ -52,6 +52,9 @@ parser_delete = subparsers.add_parser('delete',
                                       aliases=['d', 'del'],
                                       help='delete resources from selido')
 
+
+#############################################
+# Config commands
 
 parser_conf = subparsers.add_parser('configure',
                                     aliases=['c', 'conf'],

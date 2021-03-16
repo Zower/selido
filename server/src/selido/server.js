@@ -61,10 +61,15 @@ module.exports = class SelidoServer {
     setHandlers() {
         var serv = this
 
+        // Temporary fix
+        app.get('/test', function (req, res) {
+            serv.db.printAll()
+        })
+
         // Get some resources from db
-        app.get('/get/:resource', function (req, res) {
+        app.get('/get/:id', function (req, res) {
             let tags = req.body
-            serv.db.get(req.params.resource, tags)
+            serv.db.get(req.params.id, tags)
                 .then(response => {
                     serv.verbose(response)
                     res.status(response.code).send(response)
@@ -76,9 +81,9 @@ module.exports = class SelidoServer {
         })
 
         // Add resources to db
-        app.post('/add/:resource', function (req, res) {
+        app.post('/add/', function (req, res) {
             let tags = req.body
-            serv.db.add(req.params.resource, tags).then(response => {
+            serv.db.add(tags).then(response => {
                 serv.verbose(response)
                 res.status(response.code).send(response)
             }).catch(err => {
@@ -88,9 +93,9 @@ module.exports = class SelidoServer {
         });
 
         // Tag resource
-        app.post('/tag/:resource', function (req, res) {
+        app.post('/tag/:id', function (req, res) {
             let tags = req.body
-            serv.db.addTags(req.params.resource, tags).then(response => {
+            serv.db.addTags(req.params.id, tags).then(response => {
                 serv.verbose(response)
                 res.status(response.code).send(response)
             }).catch(err => {
@@ -100,9 +105,9 @@ module.exports = class SelidoServer {
         })
 
         // Delete tag from resource
-        app.delete('/tag/:resource', function (req, res) {
+        app.delete('/tag/:id', function (req, res) {
             let tags = req.body
-            serv.db.delTags(req.params.resource, tags).then(response => {
+            serv.db.delTags(req.params.id, tags).then(response => {
                 serv.verbose(response)
                 res.status(response.code).send(response)
             }).catch(err => {

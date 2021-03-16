@@ -59,28 +59,28 @@ def set_endpoint(args):
 
 
 def get(args):
-    r = requests.get(args.URL + '/get/' + args.resource,
+    r = requests.get(args.URL + '/get/' + args.id,
                      json=make_tags(args.tags))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 
 
 def add(args):
-    r = requests.post(args.URL + '/add/' + args.resource,
+    r = requests.post(args.URL + '/add/',
                       json=make_tags(args.tags))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 
 
 def add_tags(args):
-    r = requests.post(args.URL + '/tag/' + args.resource,
+    r = requests.post(args.URL + '/tag/' + args.id,
                       json=make_tags(args.tags))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 
 
 def del_tags(args):
-    r = requests.delete(args.URL + '/tag/' + args.resource,
+    r = requests.delete(args.URL + '/tag/' + args.id,
                         json=make_tags(args.tags))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
@@ -90,36 +90,38 @@ def del_tags(args):
 
 
 def print_parsed_response(parsed, indent=30):
+    print(parsed['objects'])
+
     if indent <= 5:
         print("Indent on pretty print was set to 5 or less, exiting")
         exit(1)
 
-    if len(parsed['objects']) == 0:
-        print(parsed['message'])
-        exit(0)
-
     if parsed['action'] == 'get':
         print_get(parsed, indent)
+    elif parsed['action'] == 'tag':
+        print_tag(parsed, indent)
 
 
 def print_get(parsed, indent):
-    indent_length = indent - 4  # 4 for the letters in name
-    print("Name" + ' ' * indent_length + "Tags")
+    print("Tags")
 
-    for object in parsed['objects']:
+    # if len(object['name']) > indent - 5:
+    #     print(object['name'][0:indent - 5] + '..   ', end='')
+    # else:
+    #     indent_length = indent - len(object['name'])
+    #     print(object['name'] + ' ' * indent_length, end='')
+    list_tags = []
+    for tag in parsed['objects']['tags']:
+        tag_str = tag['key']
+        if 'value' in tag:
+            tag_str += ':' + tag['value']
+        list_tags.append(tag_str)
+    print(", ".join(list_tags))
 
-        if len(object['name']) > indent - 5:
-            print(object['name'][0:indent - 5] + '..   ', end='')
-        else:
-            indent_length = indent - len(object['name'])
-            print(object['name'] + ' ' * indent_length, end='')
-        list_tags = []
-        for tag in object['tags']:
-            tag_str = tag['key']
-            if 'value' in tag:
-                tag_str += ':' + tag['value']
-            list_tags.append(tag_str)
-        print(", ".join(list_tags))
+
+def print_tag(parsed, indent):
+    print(parsed['message'])
+    exit(0)
 
 
 def make_tags(tags):

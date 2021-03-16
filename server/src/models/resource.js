@@ -2,7 +2,6 @@
 const mongoose = require('mongoose')
 
 var resourceSchema = mongoose.Schema({
-    name: String,
     tags: [
         {
             key: {
