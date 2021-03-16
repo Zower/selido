@@ -12,6 +12,8 @@ subparsers.required = True
 #############################################
 # Online commands
 
+##################
+# Add command
 parser_add = subparsers.add_parser('add',
                                    aliases=['a'],
                                    help='Add a resource to selido')
@@ -19,21 +21,35 @@ parser_add.add_argument('tags', help='The tags to add')
 parser_add.set_defaults(func=commands.add)
 
 
+##################
+# Get command
 parser_get = subparsers.add_parser('get',
                                    aliases=['g'],
-                                   help='Get resources from Selido server')
+                                   help='Get one resource from Selido server by id')
 parser_get.add_argument('id', help='The id to get')
-parser_get.add_argument(
-    '-t',
-    '--tags',
-    help='Filter on one or several tags')
+
+
 parser_get.set_defaults(func=commands.get)
 
+##################
+# Find command
+parser_find = subparsers.add_parser('find',
+                                    aliases=['f'],
+                                    help='Find a resource in selido based on tags')
+parser_find.add_argument('tags', help='The tags to find', nargs='?')
+parser_find.add_argument(
+    '-a', '--all', help='Find all resources', action='store_true')
+parser_find.add_argument('-o', '--or-search',
+                         help='Only one tag has to match', action='store_true')
+parser_find.set_defaults(func=commands.find)
 
+##################
+# Tag command
 parser_tag = subparsers.add_parser(
     'tag', aliases=['t'], help='Modify tags on resources')
 parser_tag_sub = parser_tag.add_subparsers(dest='action')
 parser_tag_sub.required = True
+
 parser_tag_add = parser_tag_sub.add_parser(
     'add', aliases=['a'], help='Add tags to resource')
 parser_tag_add.add_argument('id', help='The id to tag')
@@ -48,6 +64,8 @@ parser_tag_del.add_argument('tags', help='The tags to delete')
 parser_tag_del.set_defaults(func=commands.del_tags)
 
 
+##################
+# Delete command
 parser_delete = subparsers.add_parser('delete',
                                       aliases=['d', 'del'],
                                       help='delete resources from selido')

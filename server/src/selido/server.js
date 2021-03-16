@@ -22,8 +22,10 @@ module.exports = class SelidoServer {
             process.on('uncaughtException', function (err) {
                 if (err.code === 'EADDRINUSE')
                     reject('Port already in use, perhaps another instance is running? Try another port with -p PORT');
-                else
+                else {
+                    this.error(err)
                     reject('Unexpected problem. Error:\n' + err);
+                }
             });
 
             this.verbose('Attempting to connect to db..')
@@ -66,10 +68,23 @@ module.exports = class SelidoServer {
             serv.db.printAll()
         })
 
-        // Get some resources from db
+        // Get some resources from db with id
         app.get('/get/:id', function (req, res) {
-            let tags = req.body
-            serv.db.get(req.params.id, tags)
+            serv.db.get(req.params.id)
+                .then(response => {
+                    serv.verbose(response)
+                    res.status(response.code).send(response)
+                })
+                .catch(err => {
+                    serv.error(err)
+                    res.status(err.code).send(err)
+                })
+        })
+
+        // Search for tags
+        app.post('/find/', function (req, res) {
+            let tags = req.body.tags
+            serv.db.find(tags, req.body.and_search, req.body.all)
                 .then(response => {
                     serv.verbose(response)
                     res.status(response.code).send(response)
@@ -81,8 +96,8 @@ module.exports = class SelidoServer {
         })
 
         // Add resources to db
-        app.post('/add/', function (req, res) {
-            let tags = req.body
+        app.post('/resource/', function (req, res) {
+            let tags = req.body.tags
             serv.db.add(tags).then(response => {
                 serv.verbose(response)
                 res.status(response.code).send(response)
@@ -92,9 +107,20 @@ module.exports = class SelidoServer {
             })
         });
 
+        // Delete a resource
+        app.delete('/resource/:id', function (req, res) {
+            serv.db.delete(req.params.id).then(response => {
+                serv.verbose(response)
+                res.status(response.code).send(response)
+            }).catch(err => {
+                serv.error(err)
+                res.status(err.code).send(err)
+            })
+        })
+
         // Tag resource
         app.post('/tag/:id', function (req, res) {
-            let tags = req.body
+            let tags = req.body.tags
             serv.db.addTags(req.params.id, tags).then(response => {
                 serv.verbose(response)
                 res.status(response.code).send(response)
@@ -106,7 +132,7 @@ module.exports = class SelidoServer {
 
         // Delete tag from resource
         app.delete('/tag/:id', function (req, res) {
-            let tags = req.body
+            let tags = req.body.tags
             serv.db.delTags(req.params.id, tags).then(response => {
                 serv.verbose(response)
                 res.status(response.code).send(response)
