@@ -104,8 +104,12 @@ module.exports = class SelidoDB {
             const action = 'delete'
 
             Resource.deleteOne({ "_id": id }).then(resource => {
-                resolve(new SelidoResponse(action, success, 'Deleted resource', 200, prettyId(resource._id)))
-                //check that resource existed
+                if (resources.length == 1) {
+                    resolve(new SelidoResponse(action, success, 'Deleted resource', 200, prettyId(resource._id)))
+                }
+                else {
+                    resolve(new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id)))
+                }
             }).catch(err => {
                 reject(new SelidoResponse(action, failed, 'Couldn\'t delete from database:\nError: ' + err))
             })
