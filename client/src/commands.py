@@ -64,6 +64,14 @@ def add(args):
     print_parsed_response(parsed)
 
 
+def delete(args):
+    args = set_url(args)
+
+    r = requests.delete(args.url + '/resource/' + args.id)
+    parsed = parse_response(r.text)
+    print_parsed_response(parsed)
+
+
 def get(args):
     args = set_url(args)
 
@@ -174,6 +182,8 @@ def get_config():
 def print_parsed_response(parsed):
     if parsed['action'] == 'get' or parsed['action'] == 'find':
         print_tags(parsed)
+    else:
+        print(parsed)
 
 
 # def print_columned_response(parsed, indent=30):

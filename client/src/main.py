@@ -82,7 +82,10 @@ parser_tag_del.set_defaults(func=commands.del_tags)
 parser_delete = subparsers.add_parser('delete',
                                       aliases=['d', 'del'],
                                       help='delete resources from selido')
-
+parser_delete.add_argument('id', help='The id to delete')
+parser_delete.add_argument(
+    '-u', '--url', help="URL:port to connect to")
+parser_delete.set_defaults(func=commands.delete)
 
 #############################################
 # Config commands
