@@ -5,4 +5,5 @@ client/certs/
 server/node_modules
 server/error.log
 server/certs
+server/v3.ext
 .vscode/

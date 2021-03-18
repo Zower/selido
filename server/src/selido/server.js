@@ -6,7 +6,7 @@ var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
 
 const SelidoDB = require('./db.js');
-const SelidoCert = require('./setup.js')
+const SelidoCert = require('./cert.js')
 
 var app = express();
 app.use(jsonParser)
@@ -20,18 +20,20 @@ module.exports = class SelidoServer {
     }
 
     start() {
+        var serv = this
+        process.on('uncaughtException', function (err) {
+            if (err.code === 'EADDRINUSE') {
+                serv.error('Port already in use, perhaps another instance is running? Try another port with -p PORT. Error: ' + err);
+                process.exit(1)
+            }
+            else {
+                serv.error(err.toString())
+                process.exit(1)
+            }
+        });
         return new Promise((resolve, reject) => {
-            //This is a bit weird, shouldnt be reject or in promise?
-            process.on('uncaughtException', function (err) {
-                if (err.code === 'EADDRINUSE')
-                    reject('Port already in use, perhaps another instance is running? Try another port with -p PORT');
-                else {
-                    console.log(err)
-                    reject('Unexpected problem. Error:\n' + err);
-                }
-            });
-
-            let cert = new SelidoCert('localhost', 'client1')
+            //TODO: Fix???????
+            let cert = new SelidoCert(this.verbosity)
             var options = {}
             cert.getOrGenerateOptions()
                 .then(result => {
@@ -154,10 +156,6 @@ module.exports = class SelidoServer {
                 res.status(err.code).send(err)
             })
         })
-    }
-
-    tag(params) {
-        return this.db.add(params.resource)
     }
 
     error(message) {
