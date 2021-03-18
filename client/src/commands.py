@@ -93,8 +93,8 @@ def find(args):
     body = add_to_body(body, 'and_search', not args.or_search)
     body = add_to_body(body, 'all', args.all)
 
-    r = requests.post(args.url + '/find/', json=body, verify=certsLocation /
-                      'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
+    r = requests.post(args.url + '/find/', json=body,
+                      cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 

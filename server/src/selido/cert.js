@@ -6,7 +6,7 @@ var readline = require('readline');
 module.exports = class SelidoCert {
     constructor(verbose) {
         this.verbose = verbose
-        this.path = './certs/'
+        this.path = process.cwd() + '/certs/'
     }
 
     getOptions() {
@@ -141,13 +141,13 @@ module.exports = class SelidoCert {
     genCA() {
         this.print_verbose("Generating Certificate Authority..")
         const subjectAltName = 'subjectAltName=DNS:' + this.dns
-        return openssl(["req", "-new", "-x509", "-nodes", "-days", "365", "-addext", subjectAltName, "-subj", "/CN=selido", "-keyout", "./certs/ca.key", "-out", "./certs/ca.crt"], this.verbose)
+        return openssl(["req", "-new", "-x509", "-nodes", "-days", "365", "-addext", subjectAltName, "-subj", "/CN=selido", "-keyout", this.path + "ca.key", "-out", this.path + "ca.crt"], this.verbose)
     }
 
     // Creates the server key.
     genServerKey() {
         this.print_verbose("Generating Server Key..")
-        return openssl(["genrsa", "-out", "./certs/server.key", "2048"])
+        return openssl(["genrsa", "-out", this.path + "server.key", "2048"])
     }
 
     // Creates the Certificate Signing Request.
@@ -155,16 +155,17 @@ module.exports = class SelidoCert {
         this.print_verbose("Generating Certificate Signing Request..")
         const host_str = '/CN=' + this.dns
         const subjName = 'subjectAltName=DNS:' + this.dns
-        return openssl(["req", "-new", "-key", "./certs/server.key", "-subj", host_str, "-addext", subjName, "-out", "./certs/server.csr"], this.verbose)
+        return openssl(["req", "-new", "-key", this.path + "server.key", "-subj", host_str, "-addext", subjName, "-out", this.path + "server.csr"], this.verbose)
     }
 
     // Generates the server certificate
+    // This one is different due to the need to write to the v3.ext file, I haven't found a way to include the extension via cmd
     genServerCert() {
         return new Promise((resolve, reject) => {
             this.print_verbose("Generating Server Certificate..")
             this.write_extfile()
                 .then(() => {
-                    openssl(["x509", "-req", "-in", "./certs/server.csr", "-extfile", "./v3.ext", "-CA", "./certs/ca.crt", "-CAkey", "./certs/ca.key", "-CAcreateserial", "-days", "365", "-out", "./certs/server.crt"], this.verbose)
+                    openssl(["x509", "-req", "-in", this.path + "server.csr", "-extfile", this.path + "v3.ext", "-CA", this.path + "ca.crt", "-CAkey", this.path + "ca.key", "-CAcreateserial", "-days", "365", "-out", this.path + "server.crt"], this.verbose)
                         .then(() => {
                             resolve()
                         })
@@ -181,26 +182,26 @@ module.exports = class SelidoCert {
     // Genereates a key for a new client
     genClientKey() {
         this.print_verbose("Generating Client Key..")
-        return openssl(["genrsa", "-out", "./certs/client.key", "2048"], this.verbose)
+        return openssl(["genrsa", "-out", this.path + "client.key", "2048"], this.verbose)
     }
-
+    1
     // Generates a client Certificate Signing Request
     genClientCSR(client_name) {
         this.print_verbose("Generating Client Certificate Signing Request")
         const un = '/CN=' + this.un
-        return openssl(["req", "-new", "-key", "./certs/client.key", "-subj", un, "-out", "./certs/client.csr"], this.verbose)
+        return openssl(["req", "-new", "-key", this.path + "client.key", "-subj", un, "-out", this.path + "client.csr"], this.verbose)
     }
 
     // Generates a client Certificate
     genClientCert() {
         this.print_verbose("Generating Client Certificate..")
-        return openssl(["x509", "-req", "-in", "./certs/client.csr", "-CA", "./certs/ca.crt", "-CAkey", "./certs/ca.key", "-CAcreateserial", "-days", "365", "-out", "./certs/client.crt"], this.verbose)
+        return openssl(["x509", "-req", "-in", this.path + "client.csr", "-CA", this.path + "ca.crt", "-CAkey", this.path + "ca.key", "-CAcreateserial", "-days", "365", "-out", this.path + "client.crt"], this.verbose)
     }
 
     write_extfile() {
         return new Promise((resolve, reject) => {
             try {
-                const open = fs.openSync("./v3.ext", 'w')
+                const open = fs.openSync(this.path + "v3.ext", 'w')
 
                 let altName = 'authorityKeyIdentifier=keyid,issuer\n'
                 altName += 'basicConstraints=CA:FALSE\n'
@@ -229,7 +230,6 @@ module.exports = class SelidoCert {
 }
 
 function openssl(args, verbose = false) {
-    console.log(args)
     return new Promise((resolve, reject) => {
         const openssl = spawn("openssl", args)
 
