@@ -1,10 +1,12 @@
 'use strict';
 const log = require('../logger/log.js');
 const express = require('express');
+const https = require('https');
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
 
 const SelidoDB = require('./db.js');
+const SelidoCert = require('./setup.js')
 
 var app = express();
 app.use(jsonParser)
@@ -19,32 +21,43 @@ module.exports = class SelidoServer {
 
     start() {
         return new Promise((resolve, reject) => {
+            //This is a bit weird, shouldnt be reject or in promise?
             process.on('uncaughtException', function (err) {
                 if (err.code === 'EADDRINUSE')
                     reject('Port already in use, perhaps another instance is running? Try another port with -p PORT');
                 else {
-                    this.error(err)
+                    console.log(err)
                     reject('Unexpected problem. Error:\n' + err);
                 }
             });
 
-            this.verbose('Attempting to connect to db..')
-            this.connectToDB()
-                .then(message => {
+            let cert = new SelidoCert('localhost', 'client1')
+            var options = {}
+            cert.getOrGenerateOptions()
+                .then(result => {
+                    options = result
+                    this.verbose('Attempting to connect to db..')
+                    this.connectToDB()
+                        .then(message => {
+                            this.info(message)
 
+                            this.setHandlers()
 
-                    this.info(message)
+                            var httpsServer = https.createServer(options, app)
 
-                    this.setHandlers()
+                            httpsServer.listen(this.port, "0.0.0.0", () => {
+                                resolve('Selido server listening on port ' + this.port)
+                            });
 
-                    app.listen(this.port, "0.0.0.0", () => {
-                        resolve('Selido server listening on port ' + this.port)
-                    });
+                        })
+                        .catch(err => {
+                            reject(err)
+                        })
                 })
                 .catch(err => {
-                    reject(err)
+                    console.error(err)
+                    process.exit(1)
                 })
-
         })
     }
 

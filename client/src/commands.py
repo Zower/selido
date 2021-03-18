@@ -5,6 +5,7 @@ from config_file import ConfigFile, ParsingError
 from pathlib import Path
 
 configLocation = Path(str(Path.home()) + '/.selido/')
+certsLocation = Path(str(Path.home()) + '/.selido/certs/')
 configName = 'conf.toml'
 
 ##############################################
@@ -14,9 +15,10 @@ configName = 'conf.toml'
 def init(args):
     try:
         Path(configLocation).mkdir(parents=True, exist_ok=True)
+        Path(certsLocation).mkdir(parents=True, exist_ok=True)
         f = open(configLocation / configName, "x")
     except FileExistsError:
-        print('Config file already exists')
+        print('Config file directory or certs directory already exists')
         exit(1)
 
     config = get_config()
@@ -56,10 +58,11 @@ def add(args):
     args = set_url(args)
 
     body = {}
-    body = add_to_body(body, 'tags', make_tags(args.tags))
+    body = add_to_body(body, 'tags', make_tags(
+        args.tags))
 
     r = requests.post(args.url + '/resource/',
-                      json=body)
+                      json=body, verify=certsLocation / 'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 
@@ -67,7 +70,8 @@ def add(args):
 def delete(args):
     args = set_url(args)
 
-    r = requests.delete(args.url + '/resource/' + args.id)
+    r = requests.delete(args.url + '/resource/' + args.id, verify=certsLocation /
+                        'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 
@@ -75,7 +79,8 @@ def delete(args):
 def get(args):
     args = set_url(args)
 
-    r = requests.get(args.url + '/get/' + args.id)
+    r = requests.get(args.url + '/get/' + args.id, verify=certsLocation / 'ca.crt',
+                     cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 
@@ -88,7 +93,8 @@ def find(args):
     body = add_to_body(body, 'and_search', not args.or_search)
     body = add_to_body(body, 'all', args.all)
 
-    r = requests.post(args.url + '/find/', json=body)
+    r = requests.post(args.url + '/find/', json=body, verify=certsLocation /
+                      'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 
@@ -97,7 +103,8 @@ def add_tags(args):
     args = set_url(args)
 
     body = {}
-    body = add_to_body(body, 'tags', make_tags(args.tags))
+    body = add_to_body(body, 'tags', make_tags(args.tags), verify=certsLocation /
+                       'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
 
     r = requests.post(args.url + '/tag/' + args.id,
                       json=body)
@@ -109,7 +116,8 @@ def del_tags(args):
     args = set_url(args)
 
     body = {}
-    body = add_to_body(body, 'tags', make_tags(args.tags))
+    body = add_to_body(body, 'tags', make_tags(args.tags), verify=certsLocation /
+                       'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
 
     r = requests.delete(args.url + '/tag/' + args.id,
                         json=body)

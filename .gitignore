@@ -1,6 +1,8 @@
 client/main.build
 client/main.dist
 client/src/__pycache__
+client/certs/
 server/node_modules
 server/error.log
+server/certs
 .vscode/
