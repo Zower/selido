@@ -7,3 +7,4 @@ server/error.log
 server/certs
 server/v3.ext
 .vscode/
+*.pyc
