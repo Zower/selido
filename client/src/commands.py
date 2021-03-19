@@ -103,11 +103,11 @@ def add_tags(args):
     args = set_url(args)
 
     body = {}
-    body = add_to_body(body, 'tags', make_tags(args.tags), verify=certsLocation /
-                       'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
+    body = add_to_body(body, 'tags', make_tags(args.tags))
 
     r = requests.post(args.url + '/tag/' + args.id,
-                      json=body)
+                      json=body, verify=certsLocation /
+                      'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 
@@ -116,11 +116,11 @@ def del_tags(args):
     args = set_url(args)
 
     body = {}
-    body = add_to_body(body, 'tags', make_tags(args.tags), verify=certsLocation /
-                       'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
+    body = add_to_body(body, 'tags', make_tags(args.tags))
 
     r = requests.delete(args.url + '/tag/' + args.id,
-                        json=body)
+                        json=body, verify=certsLocation /
+                        'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
     parsed = parse_response(r.text)
     print_parsed_response(parsed)
 

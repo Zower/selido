@@ -8,7 +8,7 @@ const failed = 'failed'
 const success = 'success'
 
 class SelidoResponse {
-    constructor(action, status, message, code, objects) {
+    constructor(action, status, message, code = 500, objects) {
         this.action = action
         this.status = status
         this.code = code
@@ -111,7 +111,7 @@ module.exports = class SelidoDB {
                     resolve(new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id)))
                 }
             }).catch(err => {
-                reject(new SelidoResponse(action, failed, 'Couldn\'t delete from database:\nError: ' + err))
+                reject(new SelidoResponse(action, failed, 'Couldn\'t delete from database:\nError: ' + err, 500))
             })
         })
     }
