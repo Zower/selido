@@ -1,5 +1,6 @@
 import requests
 import json
+from enum import Enum, auto
 
 from config_file import ConfigFile, ParsingError
 from pathlib import Path
@@ -12,7 +13,7 @@ configName = 'conf.toml'
 # Local commands
 
 
-def init(args):
+def init(args):  # Should be more robust
     try:
         Path(configLocation).mkdir(parents=True, exist_ok=True)
         Path(certsLocation).mkdir(parents=True, exist_ok=True)
@@ -21,111 +22,152 @@ def init(args):
         print('Config file directory or certs directory already exists')
         exit(1)
 
-    config = get_config()
+    e = input(
+        "Where to connect to selido? If running locally it is likely \"https://localhost:3912\": ")
 
-    config.set('Endpoint.url', 'http://localhost')
-    config.set('Endpoint.port', '3912')
-    config.save()
+    set_endpoint(e)
 
 
-def set_endpoint(args):
-    config = get_config()
+def endpoint(args):
+    set_endpoint(args.url)
 
-    url_split = args.url.split(':')
 
-    # This is some jank shit, but https:// get split up so I'm merging them back together
-    url = []
-    url.append(url_split[0] + ':' + url_split[1])
-    if len(url_split) == 3:
-        url.append(url_split[2])
-
-    try:
-        config.set('Endpoint.url', url[0])
-        if len(url) == 2:
-            config.set('Endpoint.port', url[1])
-        else:
-            config.set('Endpoint.port', "")
-    except:
-        print("Invalid url, Should be: Domain:port or IP:Port")
-        exit()
-    config.save()
+def username(args):
+    set_username(args.username)
 
 #############################################
 # Online commands
 
 
 def add(args):
-    args = set_url(args)
+    args = check_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(
         args.tags))
 
-    r = requests.post(args.url + '/resource/',
-                      json=body, verify=certsLocation / 'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
+    r = send_request(args, Method.POST, '/resource/', body)
+
     parsed = parse_response(r.text)
-    print_parsed_response(parsed)
 
 
 def delete(args):
-    args = set_url(args)
+    args = check_defaults(args)
 
-    r = requests.delete(args.url + '/resource/' + args.id, verify=certsLocation /
-                        'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
+    r = send_request(args, Method.DELETE, '/resource/' + args.id)
+
     parsed = parse_response(r.text)
-    print_parsed_response(parsed)
 
 
 def get(args):
-    args = set_url(args)
+    args = check_defaults(args)
 
-    r = requests.get(args.url + '/get/' + args.id, verify=certsLocation / 'ca.crt',
-                     cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
+    r = send_request(args, Method.GET, '/get/' + args.id)
+
     parsed = parse_response(r.text)
-    print_parsed_response(parsed)
 
 
 def find(args):
-    args = set_url(args)
+    args = check_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags',  make_tags(args.tags))
     body = add_to_body(body, 'and_search', not args.or_search)
     body = add_to_body(body, 'all', args.all)
 
-    r = requests.post(args.url + '/find/', json=body, verify=certsLocation / 'ca.crt',
-                      cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
-    parsed = parse_response(r.text)
-    print_parsed_response(parsed)
+    r = send_request(args, Method.POST, '/find/', body)
+    parse_response(r.text)
 
 
 def add_tags(args):
-    args = set_url(args)
+    args = check_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(args.tags))
 
-    r = requests.post(args.url + '/tag/' + args.id,
-                      json=body, verify=certsLocation /
-                      'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
-    parsed = parse_response(r.text)
-    print_parsed_response(parsed)
+    r = send_request(args, Method.POST, '/tag/' + args.id, body)
+
+    parse_response(r.text)
 
 
 def del_tags(args):
-    args = set_url(args)
+    args = check_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(args.tags))
 
-    r = requests.delete(args.url + '/tag/' + args.id,
-                        json=body, verify=certsLocation /
-                        'ca.crt', cert=(certsLocation / 'client.crt', certsLocation / 'client.key'))
-    parsed = parse_response(r.text)
-    print_parsed_response(parsed)
+    r = send_request(args, Method.DELETE, '/tag/' + args.id, body)
+
+    parse_response(r.text)
+
+# Mother command
+
+
+def send_request(args, method, url, body=None):
+    s = requests.Session()
+    s.verify = args.ca_file
+    s.cert = args.cert
+    url = args.url + url
+    try:
+        if method == Method.GET:
+            r = s.get(url)
+        elif method == Method.POST and body:
+            r = s.post(url, json=body)
+        elif method == Method.DELETE and not body:
+            r = s.delete(url)
+        elif method == Method.DELETE and body:
+            r = s.delete(url, json=body)
+    except requests.ConnectionError as e:
+        # TODO: Check for more types of error and print appropriate message
+        print("Something went wrong connecting to selido")
+        print(e)
+        exit(1)
+    return r
 
 #############################################
 # Helpers
+
+
+def check_defaults(args):
+    args = check_url(args)
+    args = check_user_cert(args)
+    args = check_ca_cert(args)
+    return args
+
+
+def check_url(args):
+    if not args.url:
+        copy = args
+        config = get_config()
+        copy.url = config.get('Endpoint.url')
+        port = config.get('Endpoint.port')
+        if port != '':
+            copy.url += ':' + port
+        return copy
+    else:
+        return args
+
+
+def check_user_cert(args):
+    copy = args
+    config = get_config()
+    if not args.username:
+        un = config.get('Cert.username')
+        copy.username = un
+    else:
+        un = args.username
+    copy.cert = (certsLocation / (un + '.crt'), certsLocation / (un + '.key'))
+    return copy
+
+
+def check_ca_cert(args):
+    if not args.ca_file:
+        copy = args
+        config = get_config()
+        copy.ca_file = certsLocation / 'ca.crt'
+        return copy
+    else:
+        return args
 
 
 def make_tags(tags):  # Make tags into json
@@ -147,22 +189,43 @@ def add_to_body(body, name, item):  # Returns a copy of the body with the new it
     return copy
 
 
-def parse_response(response):  # Parse response as JSON
+def parse_response(response, print=True):  # Parse response as JSON
     parsed = json.loads(response)
+    if print:
+        print_parsed_response(parsed)
     return parsed
 
 
-def set_url(args):
-    if not args.url:
-        copy = args
-        config = get_config()
-        copy.url = config.get('Endpoint.url')
-        port = config.get('Endpoint.port')
-        if port != '':
-            copy.url += ':' + port
-        return copy
-    else:
-        return args
+def set_username(username):
+    config = get_config()
+    try:
+        config.set('Cert.username', username)
+    except:
+        print("Couldn't set username, make sure username is one word")
+        exit(1)
+    config.save()
+
+
+def set_endpoint(url):
+    config = get_config()
+
+    url_split = url.split(':')
+
+    # This is some jank shit, but https:// get split up so I'm merging them back together
+    new_url = []
+    new_url.append(url_split[0] + ':' + url_split[1])
+    if len(url_split) == 3:
+        new_url.append(url_split[2])
+    try:
+        config.set('Endpoint.url', new_url[0])
+        if len(new_url) == 2:
+            config.set('Endpoint.port', new_url[1])
+        else:
+            config.set('Endpoint.port', "")
+    except:
+        print("Invalid url, Should be: Domain:Port or IP:Port")
+        exit(1)
+    config.save()
 
 
 def get_config():
@@ -228,6 +291,7 @@ def print_tags(parsed):
         print(parsed)
 
 
-def print_tag(parsed, indent):
-    print(parsed['message'])
-    exit(0)
+class Method(Enum):  # Maybe more to be added later
+    GET = auto()
+    POST = auto()
+    DELETE = auto()

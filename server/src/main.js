@@ -30,7 +30,7 @@ async function main(args) {
 
 function error(message) {
   if (!args.quiet) {
-    log.error(JSON.stringify(message))
+    log.error(message.toString())
   }
 }
 

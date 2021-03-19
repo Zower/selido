@@ -2,7 +2,6 @@ const { spawn } = require("child_process");
 const fs = require('fs')
 var readline = require('readline');
 
-// TODO: This whole things is extremely jank and needs to be fixed, I'm just trying to get https to work.
 module.exports = class SelidoCert {
     constructor(verbose) {
         this.verbose = verbose
@@ -45,12 +44,11 @@ module.exports = class SelidoCert {
                                         //TODO: check
                                         scert.dns = dns
                                         scert.ips = ips
-                                        scert.un = un
 
                                         scert.genServerCerts()
                                             .then(() => {
                                                 scert.print_verbose("Finished making server certificates, creating initial client cert.")
-                                                scert.genClientCerts()
+                                                scert.genClientCerts(un)
                                                     .then(() => {
                                                         let message = "\n---------------------------------------\n"
                                                         message += "Copy ca.crt, client.key and client.crt from certs/ folder to your .selido/certs/ folder where you have your client.\nAfter this you can authenticate new machines from an authenticated client.\n"
@@ -114,11 +112,11 @@ module.exports = class SelidoCert {
 
     genClientCerts(client_name) {
         return new Promise((resolve, reject) => {
-            this.genClientKey()
+            this.genClientKey(client_name)
                 .then(() => {
                     this.genClientCSR(client_name)
                         .then(() => {
-                            this.genClientCert()
+                            this.genClientCert(client_name)
                                 .then(() => {
                                     resolve()
                                 })
@@ -135,7 +133,6 @@ module.exports = class SelidoCert {
                 })
         })
     }
-
 
     // Creates the Certificate Authority.
     genCA() {
@@ -179,23 +176,30 @@ module.exports = class SelidoCert {
         })
     }
 
+    // Could do with not passing name to every function
+
     // Genereates a key for a new client
-    genClientKey() {
+    genClientKey(client_name) {
         this.print_verbose("Generating Client Key..")
-        return openssl(["genrsa", "-out", this.path + "client.key", "2048"], this.verbose)
+        const key_name = client_name + ".key"
+        return openssl(["genrsa", "-out", this.path + key_name, "2048"], this.verbose)
     }
-    1
+
     // Generates a client Certificate Signing Request
     genClientCSR(client_name) {
         this.print_verbose("Generating Client Certificate Signing Request")
-        const un = '/CN=' + this.un
-        return openssl(["req", "-new", "-key", this.path + "client.key", "-subj", un, "-out", this.path + "client.csr"], this.verbose)
+        const key_name = client_name + ".key"
+        const csr_name = client_name + ".csr"
+        const un = '/CN=' + client_name
+        return openssl(["req", "-new", "-key", this.path + key_name, "-subj", un, "-out", this.path + csr_name], this.verbose)
     }
 
     // Generates a client Certificate
-    genClientCert() {
+    genClientCert(client_name) {
         this.print_verbose("Generating Client Certificate..")
-        return openssl(["x509", "-req", "-in", this.path + "client.csr", "-CA", this.path + "ca.crt", "-CAkey", this.path + "ca.key", "-CAcreateserial", "-days", "365", "-out", this.path + "client.crt"], this.verbose)
+        const csr_name = client_name + ".csr"
+        const crt_name = client_name + ".crt"
+        return openssl(["x509", "-req", "-in", this.path + csr_name, "-CA", this.path + "ca.crt", "-CAkey", this.path + "ca.key", "-CAcreateserial", "-days", "365", "-out", this.path + crt_name], this.verbose)
     }
 
     write_extfile() {

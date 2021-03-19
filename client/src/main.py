@@ -20,6 +20,12 @@ parser_add = subparsers.add_parser('add',
 parser_add.add_argument('tags', help='The tags to add')
 parser_add.add_argument(
     '-u', '--url', help="URL:port to connect to")
+parser_add.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_add.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
+
 parser_add.set_defaults(func=commands.add)
 
 
@@ -31,6 +37,11 @@ parser_get = subparsers.add_parser('get',
 parser_get.add_argument('id', help='The id to get')
 parser_get.add_argument(
     '-u', '--url', help="URL:port to connect to")
+parser_get.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_get.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
 
 parser_get.set_defaults(func=commands.get)
 
@@ -46,6 +57,11 @@ parser_find.add_argument('-o', '--or-search',
                          help='Only one tag has to match', action='store_true')
 parser_find.add_argument(
     '-u', '--url', help="URL:port to connect to")
+parser_find.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_find.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
 
 parser_find.set_defaults(func=commands.find)
 
@@ -62,6 +78,11 @@ parser_tag_add.add_argument('id', help='The id to tag')
 parser_tag_add.add_argument('tags', help='The tags to apply')
 parser_tag_add.add_argument(
     '-u', '--url', help="URL:port to connect to")
+parser_tag_add.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_tag_add.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
 
 parser_tag_add.set_defaults(func=commands.add_tags)
 
@@ -73,6 +94,11 @@ parser_tag_del.add_argument(
 parser_tag_del.add_argument('tags', help='The tags to delete')
 parser_tag_del.add_argument(
     '-u', '--url', help="URL:port to connect to")
+parser_tag_del.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_tag_del.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
 
 parser_tag_del.set_defaults(func=commands.del_tags)
 
@@ -85,6 +111,12 @@ parser_delete = subparsers.add_parser('delete',
 parser_delete.add_argument('id', help='The id to delete')
 parser_delete.add_argument(
     '-u', '--url', help="URL:port to connect to")
+parser_delete.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_delete.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
+
 parser_delete.set_defaults(func=commands.delete)
 
 #############################################
@@ -95,11 +127,17 @@ parser_conf = subparsers.add_parser('configure',
                                     help='Configure selido')
 parser_conf_sub = parser_conf.add_subparsers(dest='action')
 parser_conf_sub.required = True
-parser_conf_action = parser_conf_sub.add_parser(
+parser_conf_endpoint = parser_conf_sub.add_parser(
     'endpoint', aliases=['e', 'end'], help='Which endpoint to connect to')
-parser_conf_action.add_argument('url', help='The URL to use as endpoint')
-parser_conf_action.set_defaults(func=commands.set_endpoint)
+parser_conf_endpoint.add_argument(
+    'url', help='The URL to use as endpoint, including protocol(https, most likely)')
+parser_conf_endpoint.set_defaults(func=commands.endpoint)
 
+parser_conf_username = parser_conf_sub.add_parser('username', aliases=[
+    'u', 'un', 'user'], help='Which pre-fix filename the client certs have')
+parser_conf_username.add_argument(
+    'username', help='The username that was specified when creating this client key, if filename is ~/.selido/certs/foo.crt, this setting should be \'foo\'')
+parser_conf_username.set_defaults(func=commands.username)
 
 parser_init = subparsers.add_parser('init', help='Initial config of selido')
 parser_init.set_defaults(func=commands.init)

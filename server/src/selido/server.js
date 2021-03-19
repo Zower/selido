@@ -78,11 +78,6 @@ module.exports = class SelidoServer {
     setHandlers() {
         var serv = this
 
-        // Temporary fix
-        app.get('/test', function (req, res) {
-            serv.db.printAll()
-        })
-
         // Get some resources from db with id
         app.get('/get/:id', function (req, res) {
             serv.db.get(req.params.id)
@@ -92,7 +87,7 @@ module.exports = class SelidoServer {
                 })
                 .catch(err => {
                     serv.error(err)
-                    res.status(err.code).send(err)
+                    res.status(500).send(err)
                 })
         })
 
@@ -106,7 +101,7 @@ module.exports = class SelidoServer {
                 })
                 .catch(err => {
                     serv.error(err)
-                    res.status(err.code).send(err)
+                    res.status(500).send(err)
                 })
         })
 
@@ -118,7 +113,7 @@ module.exports = class SelidoServer {
                 res.status(response.code).send(response)
             }).catch(err => {
                 serv.error(err)
-                res.status(err.code).send(err)
+                res.status(500).send(err)
             })
         });
 
@@ -129,7 +124,7 @@ module.exports = class SelidoServer {
                 res.status(response.code).send(response)
             }).catch(err => {
                 serv.error(err)
-                res.status(err.code).send(err)
+                res.status(500).send(err)
             })
         })
 
@@ -141,7 +136,7 @@ module.exports = class SelidoServer {
                 res.status(response.code).send(response)
             }).catch(err => {
                 serv.error(err)
-                res.status(err.code).send(err)
+                res.status(500).send(err)
             })
         })
 
@@ -153,14 +148,14 @@ module.exports = class SelidoServer {
                 res.status(response.code).send(response)
             }).catch(err => {
                 serv.error(err)
-                res.status(err.code).send(err)
+                res.status(500).send(err)
             })
         })
     }
 
     error(message) {
         if (!this.quiet) {
-            log.error(JSON.stringify(message))
+            log.error(message.toString())
         }
     }
 

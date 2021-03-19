@@ -38,21 +38,7 @@ module.exports = class SelidoDB {
         })
     }
 
-    // Temporary fix
-    printAll() {
-        Resource.find()
-            .exec()
-            .then(resources => {
-                resources.forEach(resource => {
-                    console.log(resource)
-                })
-            })
-    }
-
-
     // Requests
-
-
     get(id) {
         return new Promise((resolve, reject) => {
             const action = 'get'
@@ -179,8 +165,13 @@ module.exports = class SelidoDB {
 
     find(tags, and_search, all = false) {
         return new Promise((resolve, reject) => {
-            // check that tags exist
             const action = 'find'
+
+            // Error checking
+            if (!(typeof tags !== 'undefined' && typeof and_search !== 'undefined')) {
+                resolve(new SelidoResponse(action, failed, 'Undefined parameters sent', 400))
+            }
+
             // Return all resources
             if (all) {
                 Resource.find().exec().then(resources => {
