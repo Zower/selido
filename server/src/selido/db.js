@@ -104,7 +104,7 @@ module.exports = class SelidoDB {
             const action = 'delete'
 
             Resource.deleteOne({ "_id": id }).then(resource => {
-                if (resources.length == 1) {
+                if (resource.length == 1) {
                     resolve(new SelidoResponse(action, success, 'Deleted resource', 200, prettyId(resource._id)))
                 }
                 else {
