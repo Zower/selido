@@ -28,6 +28,63 @@ parser_add.add_argument(
 
 parser_add.set_defaults(func=commands.add)
 
+##################
+# Authenticate command
+
+parser_authenticate = subparsers.add_parser(
+    'authenticate', aliases=['au', 'auth'], help='Request or verify authentication')
+parser_authenticate_sub = parser_authenticate.add_subparsers(dest='action')
+parser_authenticate_sub.required = True
+
+parser_authenticate_request = parser_authenticate_sub.add_parser(
+    'request', aliases=['r', 'req'], help='Request an authentication code (Does not require authentication)')
+parser_authenticate_request.add_argument(
+    'name', help="The username of this client")
+parser_authenticate_request.add_argument(
+    '-u', '--url', help="URL:port to connect to")
+parser_authenticate_request.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
+
+parser_authenticate_request.set_defaults(func=commands.auth_request)
+
+
+parser_authenticate_verify = parser_authenticate_sub.add_parser(
+    'verify', aliases=['v'], help='Verify an authentication code (Requires previous authentication)')
+parser_authenticate_verify.add_argument(
+    '-u', '--url', help="URL:port to connect to")
+parser_authenticate_verify.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_authenticate_verify.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
+
+parser_authenticate_verify.set_defaults(func=commands.auth_verify)
+
+
+parser_authenticate_hash = parser_authenticate_sub.add_parser(
+    'hash', aliases=['h'], help='Get the hash of current ca file')
+
+parser_authenticate_hash.add_argument(
+    '-ca', '--ca-file', help='Ca file to use from ~/.selido/certs')
+
+parser_authenticate_hash.set_defaults(func=commands.auth_hash)
+
+##################
+# Delete command
+parser_delete = subparsers.add_parser('delete',
+                                      aliases=['d', 'del'],
+                                      help='delete resources from selido')
+parser_delete.add_argument('id', help='The id to delete')
+parser_delete.add_argument(
+    '-u', '--url', help="URL:port to connect to")
+parser_delete.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_delete.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
+
+parser_delete.set_defaults(func=commands.delete)
 
 ##################
 # Get command
@@ -102,22 +159,6 @@ parser_tag_del.add_argument(
 
 parser_tag_del.set_defaults(func=commands.del_tags)
 
-
-##################
-# Delete command
-parser_delete = subparsers.add_parser('delete',
-                                      aliases=['d', 'del'],
-                                      help='delete resources from selido')
-parser_delete.add_argument('id', help='The id to delete')
-parser_delete.add_argument(
-    '-u', '--url', help="URL:port to connect to")
-parser_delete.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
-parser_delete.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
-)
-
-parser_delete.set_defaults(func=commands.delete)
 
 #############################################
 # Config commands

@@ -1,6 +1,8 @@
 import requests
 import json
 from enum import Enum, auto
+import hashlib
+from threading import Timer
 
 from config_file import ConfigFile, ParsingError
 from pathlib import Path
@@ -51,18 +53,99 @@ def add(args):
     parsed = parse_response(r.text)
 
 
+def auth_request(args):
+    args = check_url(args, True)
+
+    r = requests.get(args.url + '/authenticate/ca/', verify=False)
+
+    parsed = parse_response(r.text, False)
+
+    print_sha3_hex_hash(parsed['objects'])
+
+    ans = input(
+        "Type 'selido auth hash' on an authenticated machine, then make absolutely sure the two hashes match, if not, ABORT. Continue? (y/n): ")
+
+    if ans == 'y':
+        try:
+            with open(certsLocation / 'ca.crt', "w") as f:
+                f.write(parsed['objects'])
+        except OSError as e:
+            print(e)
+            exit(1)
+
+        a = requests.get(args.url + '/authenticate/' + args.name,
+                         verify=certsLocation / 'ca.crt')
+        parsed = parse_response(a.text)
+
+        try:
+            with open(certsLocation / (args.name + '.key'), "w") as f:
+                f.write(parsed['objects']['key'])
+        except OSError as e:
+            print(e)
+            exit(1)
+
+        print("Type selido auth verify on an authenticated client.")
+        print("Waiting for verification from authenticated client..")
+
+        body = {}
+        obj = {'name': args.name, 'code': parsed['objects']['code']}
+        body = add_to_body(body, 'code', obj)
+
+        Timer(0.5, auth_authenticated_yet, [
+            args, body]).start()
+
+
+def auth_authenticated_yet(args, body):
+    print("Yay")
+    print(body)
+    r = requests.post(args.url + '/authenticated/',
+                      json=body,
+                      verify=certsLocation / 'ca.crt')
+    if r.status_code == 200:
+        parsed = parse_response(r.text)
+        print(parsed)
+        try:
+            with open(certsLocation / (args.name + '.crt'), "w") as f:
+                f.write(parsed['objects'])
+            print("You are now verified!")
+            exit(0)
+        except OSError as e:
+            print(e)
+            exit(1)
+        print('yay')
+    elif r.status_code == 403:
+        # Still waiting
+        Timer(0.5, auth_authenticated_yet, [args, body]).start()
+    else:
+        print("Something went wrong, exiting")
+        print(parse_response(r.text))
+        exit(1)
+
+
+def auth_hash(args):
+    args = check_ca_cert(args)
+
+    with open(args.ca_file, "r", encoding='utf-8') as f:
+        print_sha3_hex_hash(str(f.read()))
+
+
+def auth_verify(args):
+    args = check_defaults(args)
+
+    r = send_request(args, Method.GET, '/authenticate/')
+    parsed = parse_response(r.text)
+
+    body = {}
+    body = add_to_body(body, "code", parsed['objects'][0])
+
+    p = send_request(args, Method.POST, '/authenticate/', body)
+    print(p.text)
+
+
 def delete(args):
     args = check_defaults(args)
 
     r = send_request(args, Method.DELETE, '/resource/' + args.id)
-
-    parsed = parse_response(r.text)
-
-
-def get(args):
-    args = check_defaults(args)
-
-    r = send_request(args, Method.GET, '/get/' + args.id)
 
     parsed = parse_response(r.text)
 
@@ -77,6 +160,14 @@ def find(args):
 
     r = send_request(args, Method.POST, '/find/', body)
     parse_response(r.text)
+
+
+def get(args):
+    args = check_defaults(args)
+
+    r = send_request(args, Method.GET, '/get/' + args.id)
+
+    parsed = parse_response(r.text)
 
 
 def add_tags(args):
@@ -100,10 +191,8 @@ def del_tags(args):
 
     parse_response(r.text)
 
-# Mother command
 
-
-def send_request(args, method, url, body=None):
+def send_request(args, method, url, body=None):  # Mother command
     s = requests.Session()
     s.verify = args.ca_file
     s.cert = args.cert
@@ -121,7 +210,7 @@ def send_request(args, method, url, body=None):
         # TODO: Check for more types of error and print appropriate message
         print("Something went wrong connecting to selido")
         print(e)
-        exit(1)
+        # exit(1)
     return r
 
 #############################################
@@ -135,14 +224,17 @@ def check_defaults(args):
     return args
 
 
-def check_url(args):
+def check_url(args, auth=False):
     if not args.url:
         copy = args
         config = get_config()
         copy.url = config.get('Endpoint.url')
         port = config.get('Endpoint.port')
         if port != '':
-            copy.url += ':' + port
+            if auth:
+                copy.url += ':' + str(int(port) + 1)
+            else:
+                copy.url += ':' + port
         return copy
     else:
         return args
@@ -289,6 +381,14 @@ def print_tags(parsed):
         print(parsed['message'])
         print('------')
         print(parsed)
+
+
+def print_sha3_hex_hash(string):
+    s = hashlib.sha3_256()
+    s.update(string.encode('utf-8'))
+
+    print("Hash is:")
+    print(s.hexdigest())
 
 
 class Method(Enum):  # Maybe more to be added later

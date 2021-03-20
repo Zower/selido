@@ -6,7 +6,8 @@ var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json()
 
 const SelidoDB = require('./db.js');
-const SelidoCert = require('./cert.js')
+const SelidoAuth = require('./auth.js');
+const SelidoResponse = require('./response.js');
 
 var app = express();
 app.use(jsonParser)
@@ -17,6 +18,7 @@ module.exports = class SelidoServer {
         this.port = args.port
         this.verbosity = args.verbose
         this.quiet = args.quiet
+        this.auth = new SelidoAuth(parseInt(args.port, 10) + 1, args.verbose, args.quiet)
     }
 
     start() {
@@ -33,9 +35,8 @@ module.exports = class SelidoServer {
         });
         return new Promise((resolve, reject) => {
             //TODO: Fix???????
-            let cert = new SelidoCert(this.verbosity)
             var options = {}
-            cert.getOrGenerateOptions()
+            this.auth.getOrGenerateMainOptions()
                 .then(result => {
                     options = result
                     this.verbose('Attempting to connect to db..')
@@ -51,6 +52,7 @@ module.exports = class SelidoServer {
                                 resolve('Selido server listening on port ' + this.port)
                             });
 
+                            this.auth.start()
                         })
                         .catch(err => {
                             reject(err)
@@ -151,10 +153,62 @@ module.exports = class SelidoServer {
                 res.status(500).send(err)
             })
         })
+
+        this.setAuxHandlers()
+
+    }
+
+    setAuxHandlers() {
+        var serv = this
+
+        app.get('/authenticate/', function (req, res) {
+            const action = 'getAuthVerify'
+            let codes = serv.auth.check_open_codes()
+            if (codes) {
+                var response = new SelidoResponse(action, 'success', 'Got open authentication codes', 200, codes)
+            }
+            else {
+                var response = new SelidoResponse(action, 'failed', "No authentication codes currently active", 404)
+            }
+            res.status(response.code).send(response)
+        })
+
+        app.post('/authenticate/', function (req, res) {
+            const action = 'authVerify'
+            let codes = serv.auth.check_open_codes()
+            var resp = res
+            if (codes) {
+                let verify = req.body.code
+                serv.auth.verify_code(verify).then(ver => {
+                    if (ver) {
+                        serv.verbose('Verified new connection: ')
+                        serv.verbose(ver)
+                        var response = new SelidoResponse(action, 'success', 'Verified code', 200)
+                        resp.status(response.code).send(response)
+
+                    }
+                    else {
+                        var response = new SelidoResponse(action, 'failed', 'No code matches', 400)
+                        resp.status(response.code).send(response)
+                    }
+                }).catch(error => {
+                    serv.error(error)
+                    var response = new SelidoResponse(action, 'failed', "Failed to verify", 500, error)
+                    resp.status(response.code).send(response)
+                })
+            }
+            else {
+                var response = new SelidoResponse(action, 'failed', "No authentication codes currently active", 404)
+                res.status(response.code).send(response)
+            }
+
+        })
+
     }
 
     error(message) {
         if (!this.quiet) {
+            console.log(message)
             log.error(message.toString())
         }
     }

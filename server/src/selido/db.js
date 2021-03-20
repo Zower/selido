@@ -1,22 +1,10 @@
 'use strict';
 const mongoose = require('mongoose');
-const { verbose } = require('winston');
-const log = require('../logger/log.js')
 var Resource = require('../models/resource.js')
+const SelidoResponse = require('./response.js')
 
 const failed = 'failed'
 const success = 'success'
-
-class SelidoResponse {
-    constructor(action, status, message, code = 500, objects) {
-        this.action = action
-        this.status = status
-        this.code = code
-        this.message = message
-        this.objects = objects
-        this.time = Date.now()
-    }
-}
 
 module.exports = class SelidoDB {
     constructor(url) {
@@ -89,9 +77,10 @@ module.exports = class SelidoDB {
         return new Promise((resolve, reject) => {
             const action = 'delete'
 
-            Resource.deleteOne({ "_id": id }).then(resource => {
-                if (resource.length == 1) {
-                    resolve(new SelidoResponse(action, success, 'Deleted resource', 200, prettyId(resource._id)))
+            Resource.deleteOne({ "_id": id }).then(res => {
+                console.log(res)
+                if (res.deletedCount > 0) {
+                    resolve(new SelidoResponse(action, success, 'Deleted resource', 200))
                 }
                 else {
                     resolve(new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id)))

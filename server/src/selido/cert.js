@@ -1,3 +1,5 @@
+'use strict'
+
 const { spawn } = require("child_process");
 const fs = require('fs')
 var readline = require('readline');
@@ -8,22 +10,39 @@ module.exports = class SelidoCert {
         this.path = process.cwd() + '/certs/'
     }
 
-    getOptions() {
+    getMainOptions() {
         return {
             ca: fs.readFileSync(this.path + 'ca.crt'),
             cert: fs.readFileSync(this.path + 'server.crt'),
             key: fs.readFileSync(this.path + 'server.key'),
-            rejectUnathorized: false,
-            requestCert: true
+            requestCert: true,
+            rejectUnathorized: false
         }
     }
 
-    getOrGenerateOptions() {
+    getAuthOptions() {
+        if (fs.existsSync(this.path + 'ca.crt') && fs.existsSync(this.path + 'server.crt') && fs.existsSync(this.path + 'server.key')) {
+            return {
+                // ca: fs.readFileSync(this.path + 'ca.crt'),
+                cert: fs.readFileSync(this.path + 'server.crt'),
+                key: fs.readFileSync(this.path + 'server.key'),
+                requestCert: false,
+                rejectUnathorized: false
+            }
+        }
+        else {
+            // Make better lmao
+            console.error("Attempted to start selido auth before main certificates are set, exiting")
+            process.exit(1)
+        }
+    }
+
+    async getOrGenerateMainOptions() {
         return new Promise((resolve, reject) => {
             try {
                 // TODO check for expire and refresh
                 if (fs.existsSync(this.path + 'ca.crt') && fs.existsSync(this.path + 'server.crt') && fs.existsSync(this.path + 'server.key')) {
-                    resolve(this.getOptions())
+                    resolve(this.getMainOptions())
                 }
                 else {
                     console.log('Certificates are missing, performing first time setup. If this is a mistake, abort and check your certificates.')
@@ -54,7 +73,7 @@ module.exports = class SelidoCert {
                                                         message += "Copy ca.crt, client.key and client.crt from certs/ folder to your .selido/certs/ folder where you have your client.\nAfter this you can authenticate new machines from an authenticated client.\n"
                                                         message += "---------------------------------------"
                                                         console.log(message)
-                                                        resolve(scert.getOptions())
+                                                        resolve(scert.getMainOptions())
                                                     })
                                                     .catch(err => {
                                                         reject(err)
@@ -74,64 +93,40 @@ module.exports = class SelidoCert {
                     })
                 }
             }
-            catch {
-                reject("An error occured reading certificates.")
+            catch (error) {
+                console.error("An error occured generating certificates:")
+                console.error(error)
+                process.exit(1)
             }
         })
     }
 
-    genServerCerts() {
-        return new Promise((resolve, reject) => {
-            this.genCA()
-                .then(() => {
-                    this.genServerKey()
-                        .then(() => {
-                            this.genCSR()
-                                .then(() => {
-                                    this.genServerCert()
-                                        .then(() => {
-                                            resolve()
-                                        })
-                                        .catch(err => {
-                                            reject(err)
-                                        })
-                                })
-                                .catch(err => {
-                                    reject(err)
-                                })
-                        })
-                        .catch(err => {
-                            reject(err)
-                        })
-                })
-                .catch(err => {
-                    reject(err)
-                })
-        })
+    async genServerCerts() {
+        try {
+            await this.genCA()
+            await this.genServerKey()
+            await this.genCSR()
+            await this.genServerCert()
+        }
+        catch (error) {
+            console.error("Couldn't generate server certificates")
+            console.error(error)
+            process.exit(1)
+        }
+
     }
 
-    genClientCerts(client_name) {
-        return new Promise((resolve, reject) => {
-            this.genClientKey(client_name)
-                .then(() => {
-                    this.genClientCSR(client_name)
-                        .then(() => {
-                            this.genClientCert(client_name)
-                                .then(() => {
-                                    resolve()
-                                })
-                                .catch(err => {
-                                    reject(err)
-                                })
-                        })
-                        .catch(err => {
-                            reject(err)
-                        })
-                })
-                .catch(err => {
-                    reject(err)
-                })
-        })
+    async genClientCerts(client_name) {
+        try {
+            await this.genClientKey(client_name)
+            await this.genClientCSR(client_name)
+            await this.genClientCert(client_name)
+        }
+        catch (error) {
+            console.error("Couldn't generate client certificates")
+            console.error(error)
+            process.exit(1)
+        }
     }
 
     // Creates the Certificate Authority.
@@ -157,23 +152,10 @@ module.exports = class SelidoCert {
 
     // Generates the server certificate
     // This one is different due to the need to write to the v3.ext file, I haven't found a way to include the extension via cmd
-    genServerCert() {
-        return new Promise((resolve, reject) => {
-            this.print_verbose("Generating Server Certificate..")
-            this.write_extfile()
-                .then(() => {
-                    openssl(["x509", "-req", "-in", this.path + "server.csr", "-extfile", this.path + "v3.ext", "-CA", this.path + "ca.crt", "-CAkey", this.path + "ca.key", "-CAcreateserial", "-days", "365", "-out", this.path + "server.crt"], this.verbose)
-                        .then(() => {
-                            resolve()
-                        })
-                        .catch(err => {
-                            reject(err)
-                        })
-                })
-                .catch(err => {
-                    reject(err)
-                })
-        })
+    async genServerCert() {
+        this.print_verbose("Generating Server Certificate..")
+        await this.write_extfile()
+        return openssl(["x509", "-req", "-in", this.path + "server.csr", "-extfile", this.path + "v3.ext", "-CA", this.path + "ca.crt", "-CAkey", this.path + "ca.key", "-CAcreateserial", "-days", "365", "-out", this.path + "server.crt"], this.verbose)
     }
 
     // Could do with not passing name to every function
@@ -202,28 +184,25 @@ module.exports = class SelidoCert {
         return openssl(["x509", "-req", "-in", this.path + csr_name, "-CA", this.path + "ca.crt", "-CAkey", this.path + "ca.key", "-CAcreateserial", "-days", "365", "-out", this.path + crt_name], this.verbose)
     }
 
-    write_extfile() {
-        return new Promise((resolve, reject) => {
-            try {
-                const open = fs.openSync(this.path + "v3.ext", 'w')
+    async write_extfile() {
+        try {
+            const open = fs.openSync(this.path + "v3.ext", 'w')
 
-                let altName = 'authorityKeyIdentifier=keyid,issuer\n'
-                altName += 'basicConstraints=CA:FALSE\n'
-                altName += 'keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment\n'
-                altName += 'subjectAltName = @alt_names\n\n\n'
-                altName += '[alt_names]\n'
-                altName += 'DNS = ' + this.dns + '\n'
-                altName += 'IP = ' + this.ips
+            let altName = 'authorityKeyIdentifier=keyid,issuer\n'
+            altName += 'basicConstraints=CA:FALSE\n'
+            altName += 'keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment\n'
+            altName += 'subjectAltName = @alt_names\n\n\n'
+            altName += '[alt_names]\n'
+            altName += 'DNS = ' + this.dns + '\n'
+            altName += 'IP = ' + this.ips
 
-                fs.writeSync(open, altName)
+            fs.writeSync(open, altName)
 
-                fs.closeSync(open)
-                resolve()
-            }
-            catch {
-                reject("An error occured writing to v3.ext file for certificate generation")
-            }
-        })
+            fs.closeSync(open)
+        }
+        catch (error) {
+            console.error("An error occured writing to v3.ext file")
+        }
     }
 
     print_verbose(message) {

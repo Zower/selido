@@ -12,6 +12,7 @@
     "express": "4.17.1",
     "mongoose": "5.11.15",
     "winston": "3.3.3",
-    "argparse": "2.0.1"
+    "argparse": "2.0.1",
+    "niceware": "2.0.1"
   }
 }
