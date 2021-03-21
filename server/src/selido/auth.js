@@ -79,31 +79,30 @@ module.exports = class SelidoAuth {
 
             res.status(200).send(new SelidoResponse(action, 'success', 'Got authentication code and unsigned key', 200, auth))
 
-            setTimeout(serv.deleteCode, serv.code_timeout, code)
+            setTimeout(() =>
+                serv.deleteCode(code), serv.code_timeout
+            )
 
         })
 
-        // TODO: Return different code if timed out
         app.post('/authenticated/', function (req, res) {
             const action = 'authConfirm'
             let check_auth = req.body.code
-            serv.existsOpenCode(check_auth).then(ex => {
-                if (ex) {
-                    serv.isVerified(check_auth).then(ver => {
-                        if (ver) {
-                            let cli_name_path = process.cwd() + '/certs/' + check_auth.name
-                            let cert = fs.readFileSync(cli_name_path + '.crt')
-                            res.status(200).send(new SelidoResponse(action, 'success', 'Got signed certificate', 200, cert.toString()))
-                            serv.cert.deleteClientCerts(check_auth.name)
-                        }
-                        else {
-                            res.status(401).send(new SelidoResponse(action, 'failed', 'This code has not been verified by an authenticated client yet.', 401))
-                        }
-                    })
-                }
-                else {
-                    res.status(403).send(new SelidoResponse(action, 'failed', 'This code doesnt exist, or has timed out', 403))
-                }
+            serv.existsCode(check_auth).then(ex => {
+                serv.isVerified(check_auth).then(ver => {
+                    if (ver) {
+                        let cli_name_path = process.cwd() + '/certs/' + check_auth.name
+                        let cert = fs.readFileSync(cli_name_path + '.crt')
+                        res.status(200).send(new SelidoResponse(action, 'success', 'Got signed certificate', 200, cert.toString()))
+                        serv.cert.deleteClientCerts(check_auth.name)
+                    }
+                    else if (ex && !ver) {
+                        res.status(401).send(new SelidoResponse(action, 'failed', 'This code has not been verified by an authenticated client yet.', 401))
+                    }
+                    else {
+                        res.status(403).send(new SelidoResponse(action, 'failed', 'This code doesnt exist, or has timed out', 403))
+                    }
+                })
             })
         })
     }
@@ -138,22 +137,27 @@ module.exports = class SelidoAuth {
     }
 
     deleteCode(code) {
-        if (this.open_codes.length > 0) {
-            for (var i = this.open_codes.length - 1; i >= 0; i--) {
-                let open_code = this.open_codes[i]
-                if (
-                    code.name == open_code.name && code.code.length == open_code.code.length
-                    && open_code.code.every(function (u, i) {
-                        return u == code.code[i]
-                    })
-                ) {
-                    this.open_codes.splice(i, 1)
+        try {
+            if (this.open_codes.length > 0) {
+                for (var i = this.open_codes.length - 1; i >= 0; i--) {
+                    let open_code = this.open_codes[i]
+                    if (
+                        code.name == open_code.name && code.code.length == open_code.code.length
+                        && open_code.code.every(function (u, i) {
+                            return u == code.code[i]
+                        })
+                    ) {
+                        this.open_codes.splice(i, 1)
+                    }
                 }
             }
         }
+        catch (err) {
+            console.log(err)
+        }
     }
 
-    async existsOpenCode(code) {
+    async existsCode(code) {
         if (this.open_codes.length > 0) {
             for (var i = this.open_codes.length - 1; i >= 0; i--) {
                 let open_code = this.open_codes[i]
