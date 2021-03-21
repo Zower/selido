@@ -115,8 +115,8 @@ def auth_authenticated_yet(args, body):
                       json=body,
                       verify=certsLocation / 'ca.crt')
 
+    parsed = parse_response(r.text, False)
     if r.status_code == 200:
-        parsed = parse_response(r.text, False)
         try:
             with open(certsLocation / (args.name + '.crt'), "w") as f:
                 f.write(parsed['objects'])
