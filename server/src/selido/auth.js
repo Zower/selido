@@ -17,11 +17,13 @@ var app = express()
 app.use(jsonParser)
 
 module.exports = class SelidoAuth {
-    constructor(port, verbose, quiet) {
+    constructor(port, verbose, quiet, code_timeout) {
         this.cert = new SelidoCert(verbose)
         this.port = port
         this.verbosity = verbose
         this.quiet = quiet
+        this.code_timeout = code_timeout
+
         this.options = {}
         this.open_codes = []
         this.unclaimed_codes = []
@@ -31,7 +33,7 @@ module.exports = class SelidoAuth {
         return this.cert.getOrGenerateMainOptions()
     }
 
-    check_open_codes() {
+    checkOpenCodes() {
         if (this.open_codes.length > 0) {
             return this.open_codes
         }
@@ -57,7 +59,8 @@ module.exports = class SelidoAuth {
 
         app.get('/authenticate/ca/', function (req, res) {
             let ca = fs.readFileSync(process.cwd() + '/certs/' + 'ca.crt', { encoding: 'utf-8' })
-            //TODO: Hege fix temporary pls
+            // When reading on windows, file will include \r\n
+            // As far as I can tell, .crt file cannot contain \ as a character, so replacing is okay
             ca = ca.replace(/\r/g, "");
             res.status(200).send(new SelidoResponse('getCA', 'success', 'Got CA file', 200, ca))
         })
@@ -66,7 +69,8 @@ module.exports = class SelidoAuth {
             const action = 'authRequest'
             const pass = generator.generatePassphrase(6)
             //TODO: Add timeout on challenges
-            serv.open_codes.push({ name: req.params.name, code: pass })
+            let code = { name: req.params.name, code: pass }
+            serv.open_codes.push(code)
             await serv.cert.genClientKey(req.params.name)
             await serv.cert.genClientCSR(req.params.name)
             let cli_name_path = process.cwd() + '/certs/' + req.params.name
@@ -74,26 +78,38 @@ module.exports = class SelidoAuth {
             let auth = { name: req.params.name, code: pass, key: key.toString() }
 
             res.status(200).send(new SelidoResponse(action, 'success', 'Got authentication code and unsigned key', 200, auth))
+
+            setTimeout(serv.deleteCode, serv.code_timeout, code)
+
         })
 
+        // TODO: Return different code if timed out
         app.post('/authenticated/', function (req, res) {
             const action = 'authConfirm'
             let check_auth = req.body.code
-            serv.is_verified(check_auth).then(ver => {
-                if (ver) {
-                    let cli_name_path = process.cwd() + '/certs/' + check_auth.name
-                    let cert = fs.readFileSync(cli_name_path + '.crt')
-                    res.status(200).send(new SelidoResponse(action, 'success', 'Got signed certificate', 200, cert.toString()))
-
+            serv.existsOpenCode(check_auth).then(ex => {
+                if (ex) {
+                    serv.isVerified(check_auth).then(ver => {
+                        if (ver) {
+                            let cli_name_path = process.cwd() + '/certs/' + check_auth.name
+                            let cert = fs.readFileSync(cli_name_path + '.crt')
+                            res.status(200).send(new SelidoResponse(action, 'success', 'Got signed certificate', 200, cert.toString()))
+                            serv.cert.deleteClientCerts(check_auth.name)
+                        }
+                        else {
+                            res.status(401).send(new SelidoResponse(action, 'failed', 'This code has not been verified by an authenticated client yet.', 401))
+                        }
+                    })
                 }
                 else {
-                    res.status(403).send(new SelidoResponse(action, 'failed', 'This code has not been verified by an authenticated client yet.', 403))
+                    res.status(403).send(new SelidoResponse(action, 'failed', 'This code doesnt exist, or has timed out', 403))
                 }
             })
         })
     }
 
-    async verify_code(code) {
+    // This should *never* be called from a non-authorized request
+    async verifyCode(code) {
         var serv = this
         if (this.open_codes.length > 0) {
             for (var i = this.open_codes.length - 1; i >= 0; i--) {
@@ -121,7 +137,47 @@ module.exports = class SelidoAuth {
         }
     }
 
-    async is_verified(code) {
+    deleteCode(code) {
+        if (this.open_codes.length > 0) {
+            for (var i = this.open_codes.length - 1; i >= 0; i--) {
+                let open_code = this.open_codes[i]
+                if (
+                    code.name == open_code.name && code.code.length == open_code.code.length
+                    && open_code.code.every(function (u, i) {
+                        return u == code.code[i]
+                    })
+                ) {
+                    this.open_codes.splice(i, 1)
+                }
+            }
+        }
+    }
+
+    async existsOpenCode(code) {
+        if (this.open_codes.length > 0) {
+            for (var i = this.open_codes.length - 1; i >= 0; i--) {
+                let open_code = this.open_codes[i]
+                if (
+                    code.name == open_code.name && code.code.length == open_code.code.length
+                    && open_code.code.every(function (u, i) {
+                        return u == code.code[i]
+                    })
+                ) {
+                    return true
+                }
+                else {
+                    if (i == 0) {
+                        return false
+                    }
+                }
+            }
+        }
+        else {
+            return false
+        }
+    }
+
+    async isVerified(code) {
         if (this.unclaimed_codes.length > 0) {
             for (var i = this.unclaimed_codes.length - 1; i >= 0; i--) {
                 let unclaimed_code = this.unclaimed_codes[i]
@@ -131,6 +187,7 @@ module.exports = class SelidoAuth {
                         return u == code.code[i]
                     })
                 ) {
+                    this.unclaimed_codes.splice(i, 1)
                     return true
                 }
                 else {

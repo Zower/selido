@@ -13,12 +13,12 @@ var app = express();
 app.use(jsonParser)
 
 module.exports = class SelidoServer {
-    constructor(dburl, port, verbose, quiet, no_authserver) {
+    constructor(dburl, port, verbose, quiet, no_authserver, auth_code_timeout) {
         this.db = new SelidoDB(dburl)
         this.port = port
         this.verbosity = verbose
         this.quiet = quiet
-        this.auth = new SelidoAuth(parseInt(port, 10) + 1, verbose, quiet)
+        this.auth = new SelidoAuth(parseInt(port, 10) + 1, verbose, quiet, auth_code_timeout)
         this.no_authserver = no_authserver
     }
 
@@ -169,7 +169,7 @@ module.exports = class SelidoServer {
 
         app.get('/authenticate/', function (req, res) {
             const action = 'getAuthVerify'
-            let codes = serv.auth.check_open_codes()
+            let codes = serv.auth.checkOpenCodes()
             if (codes) {
                 var response = new SelidoResponse(action, 'success', 'Got open authentication codes', 200, codes)
             }
@@ -181,11 +181,11 @@ module.exports = class SelidoServer {
 
         app.post('/authenticate/', function (req, res) {
             const action = 'authVerify'
-            let codes = serv.auth.check_open_codes()
+            let codes = serv.auth.checkOpenCodes()
             var resp = res
             if (codes) {
                 let verify = req.body.code
-                serv.auth.verify_code(verify).then(ver => {
+                serv.auth.verifyCode(verify).then(ver => {
                     if (ver) {
                         serv.verbose('Verified new connection: ')
                         serv.verbose(ver)

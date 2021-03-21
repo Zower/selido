@@ -1,7 +1,8 @@
 'use strict'
 
 const { spawn } = require("child_process");
-const fs = require('fs')
+const fs = require('fs');
+const os = require('os')
 var readline = require('readline');
 
 module.exports = class SelidoCert {
@@ -59,29 +60,43 @@ module.exports = class SelidoCert {
                             rl.question("Provide comma separated DNS names for your server, e.g. example.com, www.example.com. If running locally type localhost: ", function (dns) {
                                 rl.question("Provide comma separated IPs for your server, e.g. 203.0.113.254, 198.51.100.3. If running locally type 127.0.0.1: ", function (ips) {
                                     rl.question("Provide a client name, e.g. a username: ", function (un) {
-                                        rl.close()
-                                        //TODO: check
-                                        scert.dns = dns
-                                        scert.ips = ips
+                                        rl.question("Will this machine be the first client (automatically copy certificates to {user}/.selido/certs/)? (y/n): ", function (copy) {
+                                            rl.close()
+                                            //TODO: check for validity
+                                            scert.dns = dns
+                                            scert.ips = ips
 
-                                        scert.genServerCerts()
-                                            .then(() => {
-                                                scert.print_verbose("Finished making server certificates, creating initial client cert.")
-                                                scert.genClientCerts(un)
-                                                    .then(() => {
-                                                        let message = "\n---------------------------------------\n"
-                                                        message += "Copy ca.crt, client.key and client.crt from certs/ folder to your .selido/certs/ folder where you have your client.\nAfter this you can authenticate new machines from an authenticated client.\n"
-                                                        message += "---------------------------------------"
-                                                        console.log(message)
-                                                        resolve(scert.getMainOptions())
-                                                    })
-                                                    .catch(err => {
-                                                        reject(err)
-                                                    })
-                                            })
-                                            .catch(err => {
-                                                reject(err)
-                                            })
+                                            scert.genServerCerts()
+                                                .then(() => {
+                                                    scert.print_verbose("Finished making server certificates, creating initial client cert.")
+                                                    scert.genClientCerts(un)
+                                                        .then(() => {
+                                                            if (copy == 'y') {
+                                                                let throwErr = function (err) { if (err) throw err }
+                                                                fs.unlink(scert.path + un + '.csr', throwErr)
+                                                                var new_path = os.homedir() + '/.selido/certs/'
+                                                                fs.copyFile(scert.path + 'ca.crt', new_path + 'ca.crt', throwErr)
+                                                                fs.rename(scert.path + un + '.key', new_path + un + '.key', throwErr)
+                                                                fs.rename(scert.path + un + '.crt', new_path + un + '.crt', throwErr)
+                                                                resolve(scert.getMainOptions())
+                                                            }
+
+                                                            else {
+                                                                let message = "\n---------------------------------------\n"
+                                                                message += "*copy* ca.crt and *move* client.key and client.crt from certs/ folder to your .selido/certs/ folder where you have your client.\nAfter this you can authenticate new machines from an authenticated client.\n"
+                                                                message += "---------------------------------------"
+                                                                console.log(message)
+                                                                resolve(scert.getMainOptions())
+                                                            }
+                                                        })
+                                                        .catch(err => {
+                                                            reject(err)
+                                                        })
+                                                })
+                                                .catch(err => {
+                                                    reject(err)
+                                                })
+                                        })
                                     })
                                 })
                             })
@@ -127,6 +142,12 @@ module.exports = class SelidoCert {
             console.error(error)
             process.exit(1)
         }
+    }
+
+    delteClientCerts(client_name) {
+        fs.unlink(this.path + client_name + '.crt')
+        fs.unlink(this.path + client_name + '.key')
+        fs.unlink(this.path + client_name + '.csr')
     }
 
     // Creates the Certificate Authority.

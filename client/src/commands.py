@@ -125,10 +125,12 @@ def auth_authenticated_yet(args, body):
         except OSError as e:
             print(e)
             exit(1)
-        print('yay')
-    elif r.status_code == 403:
+    elif r.status_code == 401:
         # Still waiting
         Timer(0.5, auth_authenticated_yet, [args, body]).start()
+    elif r.status_code == 403:
+        print(parsed['message'])
+        exit(1)
     else:
         print("Something went wrong, exiting")
         print(parse_response(r.text))
