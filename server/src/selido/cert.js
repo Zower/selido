@@ -144,10 +144,11 @@ module.exports = class SelidoCert {
         }
     }
 
-    delteClientCerts(client_name) {
-        fs.unlink(this.path + client_name + '.crt')
-        fs.unlink(this.path + client_name + '.key')
-        fs.unlink(this.path + client_name + '.csr')
+    deleteClientCerts(client_name) {
+        let throwErr = function (err) { if (err) throw err }
+        fs.unlink(this.path + client_name + '.crt', throwErr)
+        fs.unlink(this.path + client_name + '.key', throwErr)
+        fs.unlink(this.path + client_name + '.csr', throwErr)
     }
 
     // Creates the Certificate Authority.
