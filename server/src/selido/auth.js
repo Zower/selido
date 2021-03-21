@@ -56,7 +56,7 @@ module.exports = class SelidoAuth {
         var serv = this
 
         app.get('/authenticate/ca/', function (req, res) {
-            let ca = fs.readFileSync(process.cwd() + '/certs/' + 'ca.crt')
+            let ca = fs.readFileSync(process.cwd() + '/certs/' + 'ca.crt', { encoding: 'utf-8' })
             res.status(200).send(new SelidoResponse('getCA', 'success', 'Got CA file', 200, ca))
         })
 
