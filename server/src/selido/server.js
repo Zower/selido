@@ -13,8 +13,8 @@ var app = express();
 app.use(jsonParser)
 
 module.exports = class SelidoServer {
-    constructor(dburl, port, verbose, quiet, no_authserver, auth_code_timeout) {
-        this.db = new SelidoDB(dburl)
+    constructor(dburl, port, verbose, quiet, no_authserver, auth_code_timeout, no_dbpassword) {
+        this.db = new SelidoDB(dburl, no_dbpassword)
         this.port = port
         this.verbosity = verbose
         this.quiet = quiet
@@ -214,8 +214,7 @@ module.exports = class SelidoServer {
 
     error(message) {
         if (!this.quiet) {
-            console.log(message)
-            log.error(message.toString())
+            log.error(JSON.stringify(message))
         }
     }
 

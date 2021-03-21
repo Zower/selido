@@ -1,5 +1,8 @@
 'use strict';
+const fs = require('fs');
 const mongoose = require('mongoose');
+var readline = require('readline');
+
 var Resource = require('../models/resource.js')
 const SelidoResponse = require('./response.js')
 
@@ -7,23 +10,90 @@ const failed = 'failed'
 const success = 'success'
 
 module.exports = class SelidoDB {
-    constructor(url) {
-        this.url = 'mongodb://' + url + '/selido'
+    constructor(url, no_password) {
+        this.host = url
+        this.no_password = no_password
     }
 
     // Startup
     init() {
         return new Promise((resolve, reject) => {
-            mongoose.connect(this.url, { useNewUrlParser: true, useUnifiedTopology: true })
-                .catch(err => {
-                    reject('Failed to connect to mongodb, is mongod started and running on ' + this.url + '? You can specify location with -d (e.g. -d localhost)\nError: ' + err)
-                });
-            this.db = mongoose.connection;
+            if (!this.no_password) {
+                try {
+                    let auth_file = fs.readFileSync(process.cwd() + '/db_auth.txt')
+                    // This replace is probably unwise :P
+                    let auth_array = auth_file.toString().replace(/\r/g, "").split('\n')
+                    if (auth_array.length == 2) {
+                        resolve(this.connect(auth_array[0], auth_array[1]))
+                    }
+                    else {
+                        console.log("db_auth.txt is wrongly formatted, make sure it's username on one line, password on the second")
+                    }
+                }
+                catch (err) {
+                    if (err.code == 'ENOENT') {
+                        var rl = readline.createInterface({
+                            input: process.stdin,
+                            output: process.stdout
+                        });
+                        rl.question("No db_auth.txt file present.\nProvide the accountname/password used when creating the database\nName: ", user => {
+                            rl.question("Password: ", pass => {
+                                rl.close()
+                                let auth = user + "\n" + pass
+                                fs.writeFileSync(process.cwd() + '/db_auth.txt', auth)
+                                resolve(this.connect(user, pass))
+                            })
+                        })
+                    }
+                    else {
+                        reject("An unexpected error occured reading from db_auth.txt" + err)
+                    }
+                }
+            }
+            else {
+                mongoose.connect('mongodb://' + this.host + '/selido', { useNewUrlParser: true, useUnifiedTopology: true })
+                    .catch(err => {
+                        reject('Failed to connect to mongodb, is mongod started and running on ' + 'mongodb://' + this.host + '/selido' + '? You can specify location with -d (e.g. -d localhost)\nError: ' + err)
+                    });
 
-            this.db.once('open', () => {
-                resolve('Connected to db!')
-            });
+                this.db = mongoose.connection;
+
+                this.db.on('error', err => {
+                    console.log(err)
+                    process.exit(1)
+                })
+
+                this.db.once('open', () => {
+                    resolve('Connected to db!')
+                });
+
+            }
+
         })
+    }
+
+    async connect(user, pass) {
+        mongoose.connect('mongodb://' + this.host + '/selido', { useNewUrlParser: true, useUnifiedTopology: true, user: user, pass: pass, auth: { authSource: "admin" } })
+            .catch(err => {
+                return 'Failed to connect to mongodb, is mongod started and running on ' + 'mongodb://' + this.host + '/selido' + ' and username/password correct? You can specify location with -d (e.g. -d localhost)\nError: ' + err
+            });
+
+        this.db = mongoose.connection;
+
+        this.db.on('error', err => {
+            if (err.codeName == 'AuthenticationFailed') {
+                console.log("Wrong password was probably used for authentication, check your db_auth.txt")
+            }
+            else {
+                console.log(err)
+            }
+            process.exit(1)
+        })
+
+        this.db.once('open', () => {
+            return 'Connected to db!'
+        });
+
     }
 
     // Requests

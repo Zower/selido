@@ -14,6 +14,7 @@ parser.add_argument('-v', '--verbose', { help: 'Print all info messages', action
 parser.add_argument('-q', '--quiet', { help: 'Suppress all messages', action: 'store_true' })
 parser.add_argument('-t', '--auth-timeout', { help: 'How long to keep code verifications open, in seconds', default: 180 })
 parser.add_argument('--no-authserver', { help: 'Dont launch the authentication server for new connections, auth is still enabled.', action: 'store_true' })
+parser.add_argument('--no-dbpassword', { help: 'Dont try to provide a username/password to mongo', action: 'store_true' })
 
 var args = parser.parse_args()
 
@@ -21,7 +22,7 @@ main(args)
 
 async function main(args) {
   info('Starting selido server..')
-  var server = new SelidoServer(args.db_url, args.port, args.verbose, args.quiet, args.no_authserver, args.auth_timeout * 1000)
+  var server = new SelidoServer(args.db_url, args.port, args.verbose, args.quiet, args.no_authserver, args.auth_timeout * 1000, args.no_dbpassword)
   server.start().then(message => {
     info(message)
   }).catch(err => {

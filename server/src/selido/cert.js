@@ -24,7 +24,7 @@ module.exports = class SelidoCert {
     getAuthOptions() {
         if (fs.existsSync(this.path + 'ca.crt') && fs.existsSync(this.path + 'server.crt') && fs.existsSync(this.path + 'server.key')) {
             return {
-                // ca: fs.readFileSync(this.path + 'ca.crt'),
+                ca: fs.readFileSync(this.path + 'ca.crt'),
                 cert: fs.readFileSync(this.path + 'server.crt'),
                 key: fs.readFileSync(this.path + 'server.key'),
                 requestCert: false,
