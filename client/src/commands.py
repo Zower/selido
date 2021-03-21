@@ -60,7 +60,7 @@ def auth_request(args):
 
     parsed = parse_response(r.text, False)
 
-    print_sha3_hex_hash(parsed['objects'])
+    print_sha3_hex_hash(parsed['objects']['data'])
 
     ans = input(
         "Type 'selido auth hash' on an authenticated machine, then make absolutely sure the two hashes match, if not, ABORT. Continue? (y/n): ")
@@ -125,8 +125,13 @@ def auth_authenticated_yet(args, body):
 def auth_hash(args):
     args = check_ca_cert(args)
 
-    with open(args.ca_file, "r", encoding='utf-8') as f:
-        print_sha3_hex_hash(str(f.read()))
+    WINDOWS_LINE_ENDING = b'\r\n'
+    UNIX_LINE_ENDING = b'\n'
+
+    with open(args.ca_file, "rb") as f:
+        content = f.read()
+    content = content.replace(WINDOWS_LINE_ENDING, UNIX_LINE_ENDING)
+    print_sha3_hex_hash(str(content))
 
 
 def auth_verify(args):
@@ -384,6 +389,7 @@ def print_tags(parsed):
 
 
 def print_sha3_hex_hash(string):
+    print(string)
     s = hashlib.sha3_256()
     s.update(string.encode('utf-8'))
 
