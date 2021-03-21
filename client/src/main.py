@@ -171,11 +171,11 @@ parser_conf_sub.required = True
 parser_conf_endpoint = parser_conf_sub.add_parser(
     'endpoint', aliases=['e', 'end'], help='Which endpoint to connect to')
 parser_conf_endpoint.add_argument(
-    'url', help='The URL to use as endpoint, including protocol(https, most likely)')
+    'url', help='The full URL to use as endpoint, e.g https://localhost:3912 or https://example.com:4023')
 parser_conf_endpoint.set_defaults(func=commands.endpoint)
 
 parser_conf_username = parser_conf_sub.add_parser('username', aliases=[
-    'u', 'un', 'user'], help='Which pre-fix filename the client certs have')
+    'u', 'un', 'user'], help='Which pre-fix filename the client certs have in /.selido/certs')
 parser_conf_username.add_argument(
     'username', help='The username that was specified when creating this client key, if filename is ~/.selido/certs/foo.crt, this setting should be \'foo\'')
 parser_conf_username.set_defaults(func=commands.username)

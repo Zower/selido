@@ -8,13 +8,14 @@ from pathlib import Path
 from config_file import ConfigFile, ParsingError
 
 from option_chooser import OptionChooser
+import tag
 
 configLocation = Path(str(Path.home()) + '/.selido/')
 certsLocation = Path(str(Path.home()) + '/.selido/certs/')
 configName = 'conf.toml'
 
 ##############################################
-# Local commands
+# Configuration commands
 
 
 def init(args):  # Should be more robust
@@ -47,7 +48,7 @@ def username(args):
 
 
 def add(args):
-    args = check_defaults(args)
+    args = set_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(
@@ -133,7 +134,7 @@ def auth_authenticated_yet(args, body):
         exit(1)
     else:
         print("Something went wrong, exiting")
-        print(parse_response(r.text))
+        print(parsed)
         exit(1)
 
 
@@ -145,7 +146,7 @@ def auth_hash(args):
 
 
 def auth_verify(args):
-    args = check_defaults(args)
+    args = set_defaults(args)
 
     r = send_request(args, Method.GET, '/authenticate/')
     parsed = parse_response(r.text, False)
@@ -164,7 +165,7 @@ def auth_verify(args):
 
 
 def delete(args):
-    args = check_defaults(args)
+    args = set_defaults(args)
 
     r = send_request(args, Method.DELETE, '/resource/' + args.id)
 
@@ -172,7 +173,7 @@ def delete(args):
 
 
 def find(args):
-    args = check_defaults(args)
+    args = set_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags',  make_tags(args.tags))
@@ -180,11 +181,15 @@ def find(args):
     body = add_to_body(body, 'all', args.all)
 
     r = send_request(args, Method.POST, '/find/', body)
-    parse_response(r.text)
+    parsed = parse_response(r.text, False)
+    items = tag.items_from_list_of_dict(
+        parsed['objects'], sort=True)
+    printer = tag.TagPrinter(items, 50)
+    printer.print(with_id=False)
 
 
 def get(args):
-    args = check_defaults(args)
+    args = set_defaults(args)
 
     r = send_request(args, Method.GET, '/get/' + args.id)
 
@@ -192,7 +197,7 @@ def get(args):
 
 
 def add_tags(args):
-    args = check_defaults(args)
+    args = set_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(args.tags))
@@ -203,7 +208,7 @@ def add_tags(args):
 
 
 def del_tags(args):
-    args = check_defaults(args)
+    args = set_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(args.tags))
@@ -238,7 +243,7 @@ def send_request(args, method, url, body=None):  # Mother command
 # Helpers
 
 
-def check_defaults(args):
+def set_defaults(args):
     args = check_url(args)
     args = check_user_cert(args)
     args = check_ca_cert(args)
@@ -289,10 +294,14 @@ def make_tags(tags):  # Make tags into json
         tags = tags.split(',')
         for tag in tags:
             tag = tag.split(':')
+
             if len(tag) == 1:
                 tags_list.append({'key': tag[0]})
             else:
-                tags_list.append({'key': tag[0], 'value': tag[1]})
+                if tag[1] != '':
+                    tags_list.append({'key': tag[0], 'value': tag[1]})
+                else:
+                    tags_list.append({'key': tag[0]})
     return tags_list
 
 
@@ -302,7 +311,7 @@ def add_to_body(body, name, item):  # Returns a copy of the body with the new it
     return copy
 
 
-def parse_response(response, print=True):  # Parse response as JSON
+def parse_response(response, print=False):  # Parse response as JSON
     parsed = json.loads(response)
     if print:
         print_parsed_response(parsed)
@@ -370,25 +379,8 @@ def print_parsed_response(parsed):
         print(parsed)
 
 
-# def print_columned_response(parsed, indent=30):
-    # if indent <= 5:
-    #     print("Indent on pretty print was set to 5 or less, exiting")
-    #     exit(1)
-
-    # if parsed['action'] == 'get':
-    #     print_get(parsed, indent)
-    # elif parsed['action'] == 'tag':
-    #     print_tag(parsed, indent)
-
-
 def print_tags(parsed):
-    # print(parsed)
     if parsed['code'] == 200:
-        # if len(object['name']) > indent - 5:
-        #     print(object['name'][0:indent - 5] + '..   ', end='')
-        # else:
-        #     indent_length = indent - len(object['name'])
-        #     print(object['name'] + ' ' * indent_length, end='')
         for el in parsed['objects']:
             print(el['id'], end='\t')
             list_tags = []

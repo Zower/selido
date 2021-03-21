@@ -1,4 +1,5 @@
 class OptionChooser:
+    # Options should be a list of possible options
     def __init__(self, options, default=None):
         self.options = options
         self.amount = len(self.options)
