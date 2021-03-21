@@ -3,9 +3,11 @@ import json
 from enum import Enum, auto
 import hashlib
 from threading import Timer
+from pathlib import Path
 
 from config_file import ConfigFile, ParsingError
-from pathlib import Path
+
+from option_chooser import OptionChooser
 
 configLocation = Path(str(Path.home()) + '/.selido/')
 certsLocation = Path(str(Path.home()) + '/.selido/certs/')
@@ -28,6 +30,9 @@ def init(args):  # Should be more robust
         "Where to connect to selido? If running locally it is likely \"https://localhost:3912\": ")
 
     set_endpoint(e)
+    u = input(
+        "Type an identifying username: ")
+    set_username(u)
 
 
 def endpoint(args):
@@ -56,11 +61,13 @@ def add(args):
 def auth_request(args):
     args = check_url(args, True)
 
+    # Yeah..
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     r = requests.get(args.url + '/authenticate/ca/', verify=False)
 
     parsed = parse_response(r.text, False)
-
-    print(parsed)
 
     print_sha3_hex_hash(parsed['objects'])
 
@@ -77,7 +84,7 @@ def auth_request(args):
 
         a = requests.get(args.url + '/authenticate/' + args.name,
                          verify=certsLocation / 'ca.crt')
-        parsed = parse_response(a.text)
+        parsed = parse_response(a.text, False)
 
         try:
             with open(certsLocation / (args.name + '.key'), "w") as f:
@@ -86,8 +93,14 @@ def auth_request(args):
             print(e)
             exit(1)
 
+        print("-------------------------------------------------------------------")
+        print("Your code is: ", end='')
+        for code in parsed['objects']['code']:
+            print(code, end=" ")
+        print()
         print("Type selido auth verify on an authenticated client.")
-        print("Waiting for verification from authenticated client..")
+        print("-------------------------------------------------------------------")
+        print("Waiting for verification from authenticated client....")
 
         body = {}
         obj = {'name': args.name, 'code': parsed['objects']['code']}
@@ -98,14 +111,12 @@ def auth_request(args):
 
 
 def auth_authenticated_yet(args, body):
-    print("Yay")
-    print(body)
     r = requests.post(args.url + '/authenticated/',
                       json=body,
                       verify=certsLocation / 'ca.crt')
+
     if r.status_code == 200:
-        parsed = parse_response(r.text)
-        print(parsed)
+        parsed = parse_response(r.text, False)
         try:
             with open(certsLocation / (args.name + '.crt'), "w") as f:
                 f.write(parsed['objects'])
@@ -135,13 +146,19 @@ def auth_verify(args):
     args = check_defaults(args)
 
     r = send_request(args, Method.GET, '/authenticate/')
-    parsed = parse_response(r.text)
+    parsed = parse_response(r.text, False)
+
+    oc = OptionChooser(parsed['objects'])
+    send = oc.get_answer()
+
+    print(send)
 
     body = {}
-    body = add_to_body(body, "code", parsed['objects'][0])
+    body = add_to_body(body, "code", send)
 
     p = send_request(args, Method.POST, '/authenticate/', body)
-    print(p.text)
+    parsed = parse_response(p.text, False)
+    print(parsed['message'])
 
 
 def delete(args):
@@ -210,9 +227,9 @@ def send_request(args, method, url, body=None):  # Mother command
             r = s.delete(url, json=body)
     except requests.ConnectionError as e:
         # TODO: Check for more types of error and print appropriate message
-        print("Something went wrong connecting to selido")
+        print("Something went wrong connecting to selido:")
         print(e)
-        # exit(1)
+        exit(1)
     return r
 
 #############################################
@@ -386,7 +403,6 @@ def print_tags(parsed):
 
 
 def print_sha3_hex_hash(string):
-    print(repr(string))
     s = hashlib.sha3_256()
     s.update(string.encode('utf-8'))
 

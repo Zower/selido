@@ -13,12 +13,13 @@ var app = express();
 app.use(jsonParser)
 
 module.exports = class SelidoServer {
-    constructor(args) {
-        this.db = new SelidoDB(args.dburl)
-        this.port = args.port
-        this.verbosity = args.verbose
-        this.quiet = args.quiet
-        this.auth = new SelidoAuth(parseInt(args.port, 10) + 1, args.verbose, args.quiet)
+    constructor(dburl, port, verbose, quiet, no_authserver) {
+        this.db = new SelidoDB(dburl)
+        this.port = port
+        this.verbosity = verbose
+        this.quiet = quiet
+        this.auth = new SelidoAuth(parseInt(port, 10) + 1, verbose, quiet)
+        this.no_authserver = no_authserver
     }
 
     start() {
@@ -52,7 +53,12 @@ module.exports = class SelidoServer {
                                 resolve('Selido server listening on port ' + this.port)
                             });
 
-                            this.auth.start()
+                            if (!this.no_authserver) {
+                                this.auth.start()
+                            }
+                            else {
+                                this.verbose("--no-authserver used, not starting auth server")
+                            }
                         })
                         .catch(err => {
                             reject(err)
