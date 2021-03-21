@@ -386,7 +386,7 @@ def print_tags(parsed):
 
 
 def print_sha3_hex_hash(string):
-    print(string)
+    print(repr(string))
     s = hashlib.sha3_256()
     s.update(string.encode('utf-8'))
 
