@@ -5,7 +5,8 @@ Selido has three components:
 * One server that manages storing and searching through tags
 * One client that can interact with the server
 * One database that stores the physical data (mongodb)
-It is not neccessary to run both, they are independent of eachother. The server accepts various HTTP requests (GET, POST, DELETE etc.), but the client is one way to interact with the server.
+
+It is not neccessary to run both the client and the server, they are independent of eachother. The server simply accepts various HTTP requests (GET, POST, DELETE etc.), but the client is one (easy) way to interact with the server. The database is required for the server.
 
 # Setup
 
