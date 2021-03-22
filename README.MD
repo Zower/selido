@@ -50,6 +50,10 @@ If you are running your database on the same machine, you will atleast need the 
 ## Client
 Currently, the code changes way too often to build binaries, but the plan is to release the client as an executable. For now, you will need python3 (>3.5, I believe) installed. There are a bajillion guides online on downloading python, just google it. Change into the directory where the client is, and type "python3 src/main.py init" (on Windows, exclude the "3" in python). When prompted for a username, make sure you type the same as when you where asked for a username on the server side.
 
+The config file and certificates are stored in <home>/.selido/. The config file is sparse, and both options can be configured with the "configure" command.
+
 # Usage
+
+Use the -h option when starting either the server or the client, to receive descriptions of the commands.
 
 Todo
