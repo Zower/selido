@@ -16,7 +16,11 @@ You will need to run an instance of mongo yourself. I recommend Docker, but it s
 If you use docker, here is the official mongo image: https://hub.docker.com/_/mongo. 
 
 One way to start the database:
+
+```shell
 docker run -d --name mongo -e MONGO_INITDB_ROOT_USERNAME=selido -e MONGO_INITDB_ROOT_PASSWORD=supersecretpassword -p 27017:27017 mongo:latest
+```
+
 Replace the password with anything you like, or remove the two "-e" options if you want an open database.
 
 
@@ -35,7 +39,13 @@ Once openssl is installed, you will need node as well.
 * Windows: https://nodejs.org/en/download/
 * Linux: https://nodejs.org/en/download/package-manager/
 
-Now you can open a terminal and change into the server directory, then run the server with "npm start -- \<options here>". If you are running your database on the same machine, you will atleast need the "-d localhost" option, which specifies where to connect to the database. You will be asked some questions relating to HTTPS certifcates, then your server will be running. If you answered no when asked if the same machine would be the first client, you will need to manually copy the specified files to the client machine, in the selido client directory (see [Client](#Client) section)
+Now you can open a terminal and change into the server directory, then run the server with 
+
+```shell
+npm start -- <options here>
+```
+
+If you are running your database on the same machine, you will atleast need the "-d localhost" option, which specifies where to connect to the database. You will be asked some questions relating to HTTPS certifcates, then your server will be running. If you answered no when asked if the same machine would be the first client, you will need to manually copy the specified files to the client machine, in the selido client directory (see [Client](#Client) section)
 
 ## Client
 Currently, the code changes way too often to build binaries, but the plan is to release the client as an executable. For now, you will need python3 (>3.5, I believe) installed. There are a bajillion guides online on downloading python, just google it. Change into the directory where the client is, and type "python3 src/main.py init" (on Windows, exclude the "3" in python). When prompted for a username, make sure you type the same as when you where asked for a username on the server side.
