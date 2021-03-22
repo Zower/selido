@@ -24,7 +24,7 @@ module.exports = class SelidoDB {
                     // This replace is probably unwise :P
                     let auth_array = auth_file.toString().replace(/\r/g, "").split('\n')
                     if (auth_array.length == 2) {
-                        resolve(this.connect(auth_array[0], auth_array[1]))
+                        resolve(this.connectWithAuth(auth_array[0], auth_array[1]))
                     }
                     else {
                         console.log("db_auth.txt is wrongly formatted, make sure it's username on one line, password on the second")
@@ -41,7 +41,7 @@ module.exports = class SelidoDB {
                                 rl.close()
                                 let auth = user + "\n" + pass
                                 fs.writeFileSync(process.cwd() + '/db_auth.txt', auth)
-                                resolve(this.connect(user, pass))
+                                resolve(this.connectWithAuth(user, pass))
                             })
                         })
                     }
@@ -72,7 +72,7 @@ module.exports = class SelidoDB {
         })
     }
 
-    async connect(user, pass) {
+    async connectWithAuth(user, pass) {
         mongoose.connect('mongodb://' + this.host + '/selido', { useNewUrlParser: true, useUnifiedTopology: true, user: user, pass: pass, auth: { authSource: "admin" } })
             .catch(err => {
                 return 'Failed to connect to mongodb, is mongod started and running on ' + 'mongodb://' + this.host + '/selido' + ' and username/password correct? You can specify location with -d (e.g. -d localhost)\nError: ' + err

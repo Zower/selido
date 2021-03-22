@@ -56,7 +56,7 @@ def add(args):
 
     r = send_request(args, Method.POST, '/resource/', body)
 
-    parsed = parse_response(r.text)
+    parsed = parse_response(r.text, True)
 
 
 def auth_request(args):
@@ -169,23 +169,32 @@ def delete(args):
 
     r = send_request(args, Method.DELETE, '/resource/' + args.id)
 
-    parsed = parse_response(r.text)
+    parsed = parse_response(r.text, True)
 
 
 def find(args):
     args = set_defaults(args)
 
     body = {}
-    body = add_to_body(body, 'tags',  make_tags(args.tags))
+    tags = make_tags(args.tags)
+    body = add_to_body(body, 'tags', tags)
     body = add_to_body(body, 'and_search', not args.or_search)
     body = add_to_body(body, 'all', args.all)
 
     r = send_request(args, Method.POST, '/find/', body)
-    parsed = parse_response(r.text, False)
+    parsed = parse_response(r.text)
+
+    exclude = []
+    if args.auto_exclude and args.tags:
+        for t in args.tags.split(','):
+            exclude.append(t.split(':')[0])
+    if args.exclude:
+        for t in args.exclude.split(','):
+            exclude.append(t)
     items = tag.items_from_list_of_dict(
-        parsed['objects'], sort=True)
-    printer = tag.TagPrinter(items, 50)
-    printer.print(with_id=False)
+        parsed['objects'], exclude, args.sort)
+    printer = tag.TagPrinter(items)
+    printer.print(with_id=not args.no_id)
 
 
 def get(args):
@@ -193,7 +202,7 @@ def get(args):
 
     r = send_request(args, Method.GET, '/get/' + args.id)
 
-    parsed = parse_response(r.text)
+    parsed = parse_response(r.text, True)
 
 
 def add_tags(args):
@@ -204,7 +213,7 @@ def add_tags(args):
 
     r = send_request(args, Method.POST, '/tag/' + args.id, body)
 
-    parse_response(r.text)
+    parse_response(r.text, True)
 
 
 def del_tags(args):
@@ -215,7 +224,7 @@ def del_tags(args):
 
     r = send_request(args, Method.DELETE, '/tag/' + args.id, body)
 
-    parse_response(r.text)
+    parse_response(r.text, True)
 
 
 def send_request(args, method, url, body=None):  # Mother command

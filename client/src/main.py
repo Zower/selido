@@ -112,6 +112,15 @@ parser_find.add_argument(
     '-a', '--all', help='Find all resources', action='store_true')
 parser_find.add_argument('-o', '--or-search',
                          help='Only one tag has to match', action='store_true')
+parser_find.add_argument('-A', '--auto-exclude',
+                         help="Exclude the search phrase keys from the printed output", action='store_true')
+parser_find.add_argument(
+    '-e', '--exclude', help="Comma-separated keys from the returned tag search to exclude in the printed output, e.g. if resource is 'foo:bar, testing', then 'find foo:bar -e foo:bar' would return 'testing'")
+parser_find.add_argument(
+    '-s', '--sort', help="Sort the tags of the resources based on keys", action='store_true')
+parser_find.add_argument(
+    '-N', '--no-id', help="When not using columned search, dont include the IDs of the resource", action='store_true'
+)
 parser_find.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_find.add_argument(
