@@ -24,7 +24,13 @@ module.exports = class SelidoDB {
                     // This replace is probably unwise :P
                     let auth_array = auth_file.toString().replace(/\r/g, "").split('\n')
                     if (auth_array.length == 2) {
-                        resolve(this.connectWithAuth(auth_array[0], auth_array[1]))
+                        this.connectWithAuth(auth_array[0], auth_array[1])
+                            .then(msg => {
+                                resolve(msg)
+                            })
+                            .catch(err => {
+                                reject(err)
+                            })
                     }
                     else {
                         console.log("db_auth.txt is wrongly formatted, make sure it's username on one line, password on the second")
@@ -51,6 +57,7 @@ module.exports = class SelidoDB {
                 }
             }
             else {
+                // No password connect
                 mongoose.connect('mongodb://' + this.host + '/selido', { useNewUrlParser: true, useUnifiedTopology: true })
                     .catch(err => {
                         reject('Failed to connect to mongodb, is mongod started and running on ' + 'mongodb://' + this.host + '/selido' + '? You can specify location with -d (e.g. -d localhost)\nError: ' + err)
@@ -72,28 +79,29 @@ module.exports = class SelidoDB {
         })
     }
 
-    async connectWithAuth(user, pass) {
-        mongoose.connect('mongodb://' + this.host + '/selido', { useNewUrlParser: true, useUnifiedTopology: true, user: user, pass: pass, auth: { authSource: "admin" } })
-            .catch(err => {
-                return 'Failed to connect to mongodb, is mongod started and running on ' + 'mongodb://' + this.host + '/selido' + ' and username/password correct? You can specify location with -d (e.g. -d localhost)\nError: ' + err
+    connectWithAuth(user, pass) {
+        return new Promise((resolve, reject) => {
+            mongoose.connect('mongodb://' + this.host + '/selido', { useNewUrlParser: true, useUnifiedTopology: true, user: user, pass: pass, auth: { authSource: "admin" } })
+                .catch(err => {
+                    reject('Failed to connect to mongodb, is mongod started and running on ' + 'mongodb://' + this.host + '/selido' + ' and username/password correct? You can specify location with -d (e.g. -d localhost)\nError: ' + err)
+                });
+
+            this.db = mongoose.connection;
+
+            this.db.on('error', err => {
+                if (err.codeName == 'AuthenticationFailed') {
+                    console.log("Wrong password was probably used for authentication, check your db_auth.txt")
+                }
+                else {
+                    console.log(err)
+                }
+                process.exit(1)
+            })
+
+            this.db.once('open', () => {
+                resolve('Connected to db!')
             });
-
-        this.db = mongoose.connection;
-
-        this.db.on('error', err => {
-            if (err.codeName == 'AuthenticationFailed') {
-                console.log("Wrong password was probably used for authentication, check your db_auth.txt")
-            }
-            else {
-                console.log(err)
-            }
-            process.exit(1)
         })
-
-        this.db.once('open', () => {
-            return 'Connected to db!'
-        });
-
     }
 
     // Requests

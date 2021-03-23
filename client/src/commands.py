@@ -193,8 +193,9 @@ def find(args):
             exclude.append(t)
     items = tag.items_from_list_of_dict(
         parsed['objects'], exclude, args.sort)
-    printer = tag.TagPrinter(items)
-    printer.print(with_id=not args.no_id)
+    printer = tag.TagPrinter(
+        items, key_columns=['test3', 'todo'], with_id=not args.no_id)
+    printer.print()
 
 
 def get(args):

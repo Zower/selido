@@ -13,8 +13,8 @@ var app = express();
 app.use(jsonParser)
 
 module.exports = class SelidoServer {
-    constructor(dburl, port, verbose, quiet, no_authserver, auth_code_timeout, no_dbpassword) {
-        this.db = new SelidoDB(dburl, no_dbpassword)
+    constructor(dburl, port, verbose, quiet, no_authserver, auth_code_timeout, no_dbauth) {
+        this.db = new SelidoDB(dburl, no_dbauth)
         this.port = port
         this.verbosity = verbose
         this.quiet = quiet
@@ -35,7 +35,6 @@ module.exports = class SelidoServer {
             }
         });
         return new Promise((resolve, reject) => {
-            //TODO: Fix???????
             var options = {}
             this.auth.getOrGenerateMainOptions()
                 .then(result => {
@@ -65,7 +64,7 @@ module.exports = class SelidoServer {
                         })
                 })
                 .catch(err => {
-                    console.error(err)
+                    serv.error(err)
                     process.exit(1)
                 })
         })

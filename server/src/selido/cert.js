@@ -75,6 +75,7 @@ module.exports = class SelidoCert {
                                                                 let throwErr = function (err) { if (err) throw err }
                                                                 fs.unlink(scert.path + un + '.csr', throwErr)
                                                                 var new_path = os.homedir() + '/.selido/certs/'
+                                                                fs.mkdirSync(new_path, { recursive: true })
                                                                 fs.copyFile(scert.path + 'ca.crt', new_path + 'ca.crt', throwErr)
                                                                 fs.rename(scert.path + un + '.key', new_path + un + '.key', throwErr)
                                                                 fs.rename(scert.path + un + '.crt', new_path + un + '.crt', throwErr)
