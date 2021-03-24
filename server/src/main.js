@@ -25,8 +25,6 @@ parser.add_argument('--no-dbauth', { help: 'Dont try to provide a username/passw
 
 var args = parser.parse_args()
 
-console.log(args)
-
 main(args)
 
 async function main(args) {
