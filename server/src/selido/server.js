@@ -23,6 +23,7 @@ module.exports = class SelidoServer {
         })
         this.verbosity = options.verbose || false
         this.quiet = options.quiet || false
+        this.debug = options.debug || false
         this.auth = new SelidoAuth(options.authPort || 3913, {
             verbose: options.verbose,
             quiet: options.quiet,
@@ -143,7 +144,7 @@ module.exports = class SelidoServer {
                 this.auth.verifyCode(verify).then(ver => {
                     if (ver) {
                         this.verbose('Verified new connection: ')
-                        this.verbose(ver)
+                        this.verbose(JSON.stringify(ver))
                         var response = new SelidoResponse(action, 'success', 'Verified code', 200)
                         resp.status(response.code).send(response)
 

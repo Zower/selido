@@ -146,7 +146,7 @@ module.exports = class SelidoAuth {
                     })
                 ) {
                     await this.cert.genClientCert(code.name)
-                    this.unclaimed_codes.push(serv.open_codes[i])
+                    this.unclaimed_codes.push(this.open_codes[i])
                     this.open_codes.splice(i, 1)
                     return code
                 }
