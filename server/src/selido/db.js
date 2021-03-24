@@ -118,7 +118,6 @@ module.exports = class SelidoDB {
                 }
                 var resource = resources[0]
                 return new SelidoResponse(action, success, 'Got resource', 200, prettyConvert(resource))
-
             }
             else {
                 return new SelidoResponse(action, failed, 'Invalid id', 400)
@@ -151,12 +150,17 @@ module.exports = class SelidoDB {
         const action = 'delete'
 
         try {
-            let answer = await Resource.deleteOne({ "_id": id })
-            if (answer.deletedCount > 0) {
-                return new SelidoResponse(action, success, 'Deleted resource', 200)
+            if (id.match(/^[0-9a-fA-F]{24}$/)) {
+                let answer = await Resource.deleteOne({ "_id": id })
+                if (answer.deletedCount > 0) {
+                    return new SelidoResponse(action, success, 'Deleted resource', 200)
+                }
+                else {
+                    return new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id))
+                }
             }
             else {
-                return new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id))
+                return new SelidoResponse(action, failed, 'Invalid id', 400)
             }
         }
         catch (e) {
@@ -169,23 +173,28 @@ module.exports = class SelidoDB {
         const action = 'tag'
 
         try {
-            let resources = await Resource.find({ "_id": id }).exec()
-            if (resources.length == 0) {
-                return new SelidoResponse(action, failed, 'No resources with that id', 404, prettyId(id))
-            }
-            else if (resources.length > 1) {
-                return new SelidoResponse(action, failed, 'More than one resource with same id', 404, prettyId(id))
-            }
-            var resource = resources[0]
+            if (id.match(/^[0-9a-fA-F]{24}$/)) {
+                let resources = await Resource.find({ "_id": id }).exec()
+                if (resources.length == 0) {
+                    return new SelidoResponse(action, failed, 'No resources with that id', 404, prettyId(id))
+                }
+                else if (resources.length > 1) {
+                    return new SelidoResponse(action, failed, 'More than one resource with same id', 404, prettyId(id))
+                }
+                var resource = resources[0]
 
-            // Add tags to element
-            tags.forEach(tag => {
-                resource.tags.push(tag)
-            })
+                // Add tags to element
+                tags.forEach(tag => {
+                    resource.tags.push(tag)
+                })
 
-            // Save to database
-            resource = await resource.save()
-            return new SelidoResponse(action, success, 'Tagged resource', 200, prettyConvert(resource))
+                // Save to database
+                resource = await resource.save()
+                return new SelidoResponse(action, success, 'Tagged resource', 200, prettyConvert(resource))
+            }
+            else {
+                return new SelidoResponse(action, failed, 'Invalid id', 400)
+            }
         }
         catch (e) {
             this.error(e)
@@ -201,26 +210,31 @@ module.exports = class SelidoDB {
         }
 
         try {
-            let resources = await Resource.find({ "_id": id }).exec()
-            if (resources.length == 0) {
-                return new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id))
-            }
-            else if (resources.length > 1) {
-                return new SelidoResponse(action, failed, 'More than one resource with same id', 404, prettyId(id))
-            }
+            if (id.match(/^[0-9a-fA-F]{24}$/)) {
+                let resources = await Resource.find({ "_id": id }).exec()
+                if (resources.length == 0) {
+                    return new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id))
+                }
+                else if (resources.length > 1) {
+                    return new SelidoResponse(action, failed, 'More than one resource with same id', 404, prettyId(id))
+                }
 
 
-            var resource = resources[0]
+                var resource = resources[0]
 
-            // Delete tags from element
-            tags.forEach(tag => {
-                resource.tags = resource.tags.filter(function (tag_check) {
-                    return !(tag_check.key === tag.key && tag_check.value === tag.value)
+                // Delete tags from element
+                tags.forEach(tag => {
+                    resource.tags = resource.tags.filter(function (tag_check) {
+                        return !(tag_check.key === tag.key && tag_check.value === tag.value)
+                    })
                 })
-            })
 
-            resource = await resource.save()
-            return new SelidoResponse(action, success, 'Deleted tags from resource', 200, prettyConvert(resource))
+                resource = await resource.save()
+                return new SelidoResponse(action, success, 'Deleted tags from resource', 200, prettyConvert(resource))
+            }
+            else {
+                return new SelidoResponse(action, failed, 'Invalid id', 400)
+            }
         }
 
         catch (e) {

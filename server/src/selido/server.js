@@ -171,7 +171,7 @@ module.exports = class SelidoServer {
     verbose_print_answer(answer) {
         this.verbose("Action " + answer.action + " gave results: ")
         if (typeof answer.objects !== 'undefined') {
-            this.verbose(answer.objects)
+            this.verbose(JSON.stringify(answer.objects))
         }
     }
 
