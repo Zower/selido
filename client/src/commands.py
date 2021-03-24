@@ -4,6 +4,9 @@ from enum import Enum, auto
 import hashlib
 from threading import Timer
 from pathlib import Path
+import subprocess
+import os
+import platform
 
 from config_file import ConfigFile, ParsingError
 
@@ -211,6 +214,24 @@ def get(args):
     parsed = parse_response(r.text, True)
 
 
+def open_file(args):
+    args = set_defaults(args)
+
+    r = send_request(args, Method.GET, '/get/' + args.id)
+
+    parsed = parse_response(r.text)
+    item = tag.items_from_list_of_dict(parsed['objects'])[0]
+    for t in item.tags:
+        if t.key == 'path':
+            print(platform.system())
+            if platform.system() == 'Darwin':
+                subprocess.call(('open', t.value))
+            elif platform.system() == 'Windows':
+                os.startfile(t.value)
+            else:
+                subprocess.call(('xdg-open', t.value))
+
+
 def add_tags(args):
     args = set_defaults(args)
 
@@ -308,7 +329,7 @@ def make_tags(tags):  # Make tags into json
     if tags:
         tags = tags.split(',')
         for tag in tags:
-            tag = tag.split(':')
+            tag = tag.split(':', 1)
 
             if len(tag) == 1:
                 tags_list.append({'key': tag[0]})

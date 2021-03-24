@@ -170,6 +170,23 @@ parser_tag_del.add_argument(
 
 parser_tag_del.set_defaults(func=commands.del_tags)
 
+##################
+# Open command
+parser_open = subparsers.add_parser(
+    'open', aliases=['o'], help="Open a resource with a 'path:<PATH>' tag in the default application.")
+parser_open.add_argument(
+    'id', help='The id of the item to open'
+)
+parser_open.add_argument(
+    '-u', '--url', help="URL:port to connect to")
+parser_open.add_argument(
+    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+parser_open.add_argument(
+    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+)
+
+parser_open.set_defaults(func=commands.open_file)
+
 
 #############################################
 # Config commands

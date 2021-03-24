@@ -22,7 +22,7 @@ class OptionChooser:
                 try:
                     answer = input(message)
                     if answer == 'q':
-                        exit(1)
+                        exit(0)
                     elif self.default and answer == "":
                         self.number = default
                         break
