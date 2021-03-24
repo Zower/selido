@@ -13,9 +13,9 @@ const success = 'success'
 module.exports = class SelidoDB {
     constructor(url, options = {}) {
         this.host = url
-        this.use_password = options.use_password || true
-        this.verbosity = options.verbose || false
-        this.debug = options.debug || false
+        this.use_password = options.use_password
+        this.verbosity = options.verbose
+        this.debug = options.debug
     }
 
     // Startup

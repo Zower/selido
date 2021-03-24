@@ -9,8 +9,8 @@ const log = require('../logger/log.js');
 
 module.exports = class SelidoCert {
     constructor(options) {
-        this.verbosity = options.verbose || false
-        this.debug = options.debug || false
+        this.verbosity = options.verbose
+        this.debug = options.debug
         this.path = process.cwd() + '/certs/'
     }
 

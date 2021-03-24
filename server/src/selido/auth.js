@@ -20,13 +20,13 @@ module.exports = class SelidoAuth {
     constructor(port, options = {}) {
         this.port = port
         this.cert = new SelidoCert({
-            verbose: options.verbose || false,
-            debug: options.debug || false
+            verbose: options.verbose,
+            debug: options.debug,
         })
-        this.verbosity = options.verbose || false
-        this.debug = options.debug || false
-        this.quiet = options.quiet || false
-        this.code_timeout = options.code_timeout || 180000
+        this.verbosity = options.verbose,
+            this.debug = options.debug,
+            this.quiet = options.quiet,
+            this.code_timeout = options.code_timeout
 
         this.open_codes = []
         this.unclaimed_codes = []

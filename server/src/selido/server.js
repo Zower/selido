@@ -62,7 +62,7 @@ module.exports = class SelidoServer {
     }
 
     async connectToDB() {
-        return await this.db.init()
+        return this.db.init()
     }
 
     setHandlers() {
