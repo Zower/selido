@@ -196,6 +196,10 @@ module.exports = class SelidoDB {
     async delTags(id, tags) {
         const action = 'delTags'
 
+        if (!(typeof tags !== 'undefined')) {
+            return new SelidoResponse(action, failed, 'Undefined parameters sent', 400)
+        }
+
         try {
             let resources = await Resource.find({ "_id": id }).exec()
             if (resources.length == 0) {
