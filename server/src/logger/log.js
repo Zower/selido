@@ -11,6 +11,7 @@ log = winston.createLogger({
   transports: [
     new winston.transports.File({
       filename: 'error.log', level: 'error', format: winston.format.combine(
+        winston.format.errors({ stack: true }),
         winston.format.timestamp({ format: 'YYYY-MM-DD hh:mm:ss' }),
         winston.format.json()
       )
@@ -22,7 +23,7 @@ log = winston.createLogger({
         winston.format.simple()
       ),
       prettyPrint: true
-    }),
+    })
   ],
 })
 

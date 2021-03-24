@@ -13,162 +13,118 @@ var app = express();
 app.use(jsonParser)
 
 module.exports = class SelidoServer {
-    constructor(dburl, port, verbose, quiet, no_authserver, auth_code_timeout, no_dbauth) {
-        this.db = new SelidoDB(dburl, no_dbauth)
+    constructor(port, dbhost, options = {}) {
         this.port = port
-        this.verbosity = verbose
-        this.quiet = quiet
-        this.auth = new SelidoAuth(parseInt(port, 10) + 1, verbose, quiet, auth_code_timeout)
-        this.no_authserver = no_authserver
+        this.db = new SelidoDB(dbhost, {
+            use_password: options.use_dbauth,
+            debug: options.debug,
+            quiet: options.quiet,
+            verbose: options.verbose,
+        })
+        this.verbosity = options.verbose || false
+        this.quiet = options.quiet || false
+        this.auth = new SelidoAuth(options.authPort || 3913, {
+            verbose: options.verbose,
+            quiet: options.quiet,
+            debug: options.debug,
+            code_timeout: options.code_timeout
+        })
+        this.start_authserver = options.authserver || true
     }
 
-    start() {
-        var serv = this
-        process.on('uncaughtException', function (err) {
-            if (err.code === 'EADDRINUSE') {
-                serv.error('Port already in use, perhaps another instance is running? Try another port with -p PORT. Error: ' + err);
-                process.exit(1)
+    async start() {
+        try {
+            let options = await this.auth.getOrGenerateMainOptions()
+            this.verbose("Attempting to connect to db..")
+            let message = await this.connectToDB()
+            this.info(message)
+
+            this.setHandlers()
+
+            var httpsServer = https.createServer(options, app)
+
+            httpsServer.listen(this.port, "0.0.0.0", () => {
+                this.verbose('Selido server listening on port ' + this.port)
+            });
+
+            if (this.start_authserver) {
+                this.auth.start()
             }
             else {
-                serv.error(err.toString())
-                process.exit(1)
+                this.verbose("--no-authserver used, not starting auth server")
             }
-        });
-        return new Promise((resolve, reject) => {
-            var options = {}
-            this.auth.getOrGenerateMainOptions()
-                .then(result => {
-                    options = result
-                    this.verbose('Attempting to connect to db..')
-                    this.connectToDB()
-                        .then(message => {
-                            this.info(message)
-
-                            this.setHandlers()
-
-                            var httpsServer = https.createServer(options, app)
-
-                            httpsServer.listen(this.port, "0.0.0.0", () => {
-                                resolve('Selido server listening on port ' + this.port)
-                            });
-
-                            if (!this.no_authserver) {
-                                this.auth.start()
-                            }
-                            else {
-                                this.verbose("--no-authserver used, not starting auth server")
-                            }
-                        })
-                        .catch(err => {
-                            reject(err)
-                        })
-                })
-                .catch(err => {
-                    serv.error(err)
-                    process.exit(1)
-                })
-        })
+        }
+        catch (e) {
+            this.error(e)
+            process.exit(1)
+        }
     }
 
-    connectToDB() {
-        return new Promise((resolve, reject) => {
-            this.db.init()
-                .then(message => {
-                    resolve(message)
-                })
-                .catch(err => {
-                    reject(err)
-                })
-        })
+    async connectToDB() {
+        return await this.db.init()
     }
 
     setHandlers() {
-        var serv = this
-
         // Get some resources from db with id
-        app.get('/get/:id', function (req, res) {
-            serv.db.get(req.params.id)
-                .then(response => {
-                    serv.verbose(response)
-                    res.status(response.code).send(response)
-                })
-                .catch(err => {
-                    serv.error(err)
-                    res.status(500).send(err)
-                })
+        app.get('/get/:id', async (req, res) => {
+            let answer = await this.db.get(req.params.id)
+
+            this.verbose_print_answer(answer)
+            res.status(answer.code).send(answer)
         })
 
         // Search for tags
-        app.post('/find/', function (req, res) {
+        app.post('/find/', async (req, res) => {
             let tags = req.body.tags
-            serv.db.find(tags, req.body.and_search, req.body.all)
-                .then(response => {
-                    serv.verbose(response)
-                    res.status(response.code).send(response)
-                })
-                .catch(err => {
-                    serv.error(err)
-                    res.status(500).send(err)
-                })
+            let answer = await this.db.find(tags, req.body.and_search, req.body.all)
+
+            this.verbose_print_answer(answer)
+            res.status(answer.code).send(answer)
         })
 
         // Add resources to db
-        app.post('/resource/', function (req, res) {
+        app.post('/resource/', async (req, res) => {
             let tags = req.body.tags
-            serv.db.add(tags).then(response => {
-                serv.verbose(response)
-                res.status(response.code).send(response)
-            }).catch(err => {
-                serv.error(err)
-                res.status(500).send(err)
-            })
+            let answer = await this.db.add(tags)
+
+            this.verbose_print_answer(answer)
+            res.status(answer.code).send(answer)
         });
 
         // Delete a resource
-        app.delete('/resource/:id', function (req, res) {
-            serv.db.delete(req.params.id).then(response => {
-                serv.verbose(response)
-                res.status(response.code).send(response)
-            }).catch(err => {
-                serv.error(err)
-                res.status(500).send(err)
-            })
+        app.delete('/resource/:id', async (req, res) => {
+            let answer = await this.db.delete(req.params.id)
+
+            this.verbose_print_answer(answer)
+            res.status(answer.code).send(answer)
         })
 
         // Tag resource
-        app.post('/tag/:id', function (req, res) {
+        app.post('/tag/:id', async (req, res) => {
             let tags = req.body.tags
-            serv.db.addTags(req.params.id, tags).then(response => {
-                serv.verbose(response)
-                res.status(response.code).send(response)
-            }).catch(err => {
-                serv.error(err)
-                res.status(500).send(err)
-            })
+            let answer = await this.db.addTags(req.params.id, tags)
+
+            this.verbose_print_answer(answer)
+            res.status(answer.code).send(answer)
         })
 
         // Delete tag from resource
-        app.delete('/tag/:id', function (req, res) {
+        app.delete('/tag/:id', async (req, res) => {
             let tags = req.body.tags
-            serv.db.delTags(req.params.id, tags).then(response => {
-                serv.verbose(response)
-                res.status(response.code).send(response)
-            }).catch(err => {
-                serv.error(err)
-                res.status(500).send(err)
-            })
+            let answer = await this.db.delTags(req.params.id, tags)
+
+            this.verbose_print_answer(answer)
+            res.status(answer.code).send(answer)
         })
 
         this.setAuxHandlers()
-
     }
 
     setAuxHandlers() {
-        var serv = this
 
-        app.get('/authenticate/', function (req, res) {
+        app.get('/authenticate/', async (req, res) => {
             const action = 'getAuthVerify'
-            let codes = serv.auth.checkOpenCodes()
+            let codes = this.auth.getOpenCodes()
             if (codes) {
                 var response = new SelidoResponse(action, 'success', 'Got open authentication codes', 200, codes)
             }
@@ -178,16 +134,16 @@ module.exports = class SelidoServer {
             res.status(response.code).send(response)
         })
 
-        app.post('/authenticate/', function (req, res) {
+        app.post('/authenticate/', async (req, res) => {
             const action = 'authVerify'
-            let codes = serv.auth.checkOpenCodes()
+            let codes = this.auth.getOpenCodes()
             var resp = res
             if (codes) {
                 let verify = req.body.code
-                serv.auth.verifyCode(verify).then(ver => {
+                this.auth.verifyCode(verify).then(ver => {
                     if (ver) {
-                        serv.verbose('Verified new connection: ')
-                        serv.verbose(ver)
+                        this.verbose('Verified new connection: ')
+                        this.verbose(ver)
                         var response = new SelidoResponse(action, 'success', 'Verified code', 200)
                         resp.status(response.code).send(response)
 
@@ -197,7 +153,7 @@ module.exports = class SelidoServer {
                         resp.status(response.code).send(response)
                     }
                 }).catch(error => {
-                    serv.error(error)
+                    this.error(error)
                     var response = new SelidoResponse(action, 'failed', "Failed to verify", 500, error)
                     resp.status(response.code).send(response)
                 })
@@ -211,21 +167,43 @@ module.exports = class SelidoServer {
 
     }
 
-    error(message) {
+    verbose_print_answer(answer) {
+        this.verbose("Action " + answer.action + " gave results: ")
+        let string_objects = ''
+        if (typeof answer.objects !== 'undefined') {
+            answer.objects.forEach(object => {
+                string_objects += JSON.stringify(object)
+            })
+            this.verbose(string_objects)
+        }
+    }
+
+    error(err) {
         if (!this.quiet) {
-            log.error(JSON.stringify(message))
+            if (!this.debug) {
+                log.error(err.message)
+            }
+            else {
+                log.error(err.stack)
+            }
         }
     }
 
     verbose(message) {
-        if (this.verbosity && !this.quiet) {
-            log.info(JSON.stringify(message))
+        if (this.verbose && !this.quiet) {
+            log.info(message)
+        }
+    }
+
+    warn(message) {
+        if (!this.quiet) {
+            log.warn(message)
         }
     }
 
     info(message) {
         if (!this.quiet) {
-            log.info(JSON.stringify(message))
+            log.info(message)
         }
     }
 }

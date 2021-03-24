@@ -87,8 +87,8 @@ class TagPrinter:
         if self.with_id:
             space = ' ' * 2
             print(item.id, end=space)
-        for i, tag in enumerate(item.tags):
-            if tag.key_in_columns(tag.):
+        # for i, tag in enumerate(item.tags):
+            # if tag.key_in_columns(tag.):
 
     def space(self, string):
         return ' ' * (self.indent_tags - len(string))
