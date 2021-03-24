@@ -24,7 +24,7 @@ module.exports = class SelidoServer {
         this.verbosity = options.verbose || false
         this.quiet = options.quiet || false
         this.debug = options.debug || false
-        this.auth = new SelidoAuth(options.authPort || 3913, {
+        this.auth = new SelidoAuth(options.auth_port || 3913, {
             verbose: options.verbose,
             quiet: options.quiet,
             debug: options.debug,

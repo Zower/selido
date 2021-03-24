@@ -25,6 +25,8 @@ parser.add_argument('--no-dbauth', { help: 'Dont try to provide a username/passw
 
 var args = parser.parse_args()
 
+console.log(args)
+
 main(args)
 
 async function main(args) {
@@ -34,7 +36,9 @@ async function main(args) {
     quiet: args.quiet,
     debug: args.debug,
     authserver: !args.no_authserver,
-    use_dbauth: !args.no_dbauth
+    use_dbauth: !args.no_dbauth,
+    auth_port: args.auth_port,
+    code_timeout: args.auth_timeout * 1000,
   })
 
   server.start()

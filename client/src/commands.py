@@ -223,7 +223,6 @@ def open_file(args):
     item = tag.items_from_list_of_dict(parsed['objects'])[0]
     for t in item.tags:
         if t.key == 'path':
-            print(platform.system())
             if platform.system() == 'Darwin':
                 subprocess.call(('open', t.value))
             elif platform.system() == 'Windows':

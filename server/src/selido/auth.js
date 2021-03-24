@@ -23,10 +23,10 @@ module.exports = class SelidoAuth {
             verbose: options.verbose,
             debug: options.debug,
         })
-        this.verbosity = options.verbose,
-            this.debug = options.debug,
-            this.quiet = options.quiet,
-            this.code_timeout = options.code_timeout
+        this.verbosity = options.verbose
+        this.debug = options.debug
+        this.quiet = options.quiet
+        this.code_timeout = options.code_timeout
 
         this.open_codes = []
         this.unclaimed_codes = []
