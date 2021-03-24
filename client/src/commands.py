@@ -182,7 +182,25 @@ def find(args):
     body = add_to_body(body, 'all', args.all)
 
     r = send_request(args, Method.POST, '/find/', body)
-    parsed = parse_response(r.text, True)
+    parsed = parse_response(r.text)
+
+    exclude = []
+    if args.auto_exclude and args.tags:
+        for t in args.tags.split(','):
+            exclude.append(t.split(':')[0])
+    if args.exclude:
+        for t in args.exclude.split(','):
+            exclude.append(t)
+
+    items = tag.items_from_list_of_dict(parsed['objects'], exclude, args.sort)
+
+    columns = None
+    if args.columns:
+        columns = args.columns.split(",")
+
+    printer = tag.TagPrinter(
+        items, with_id=not args.no_id, key_columns=columns)
+    printer.print()
 
     # exclude = []
     # if args.auto_exclude and args.tags:

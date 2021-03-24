@@ -3,11 +3,11 @@ class Tag:
         self.key = key
         self.value = value
 
-    def key(self):
-        return self.key
-
-    def value(self):
-        return self.value
+    def __str__(self):
+        if self.value:
+            return self.key + ":" + self.value
+        else:
+            return self.key
 
 
 class Item:
@@ -76,8 +76,8 @@ class TagPrinter:
         for col in self.key_columns:
             if not self.print_too_long(col):
                 space = self.space(col)
-                print(col + space, end='')
-        print("Tags")
+                print(col, end=space)
+        print("Other tags\n")
 
         for item in self.tags:
             self.print_item_columned(item)
@@ -87,16 +87,34 @@ class TagPrinter:
         if self.with_id:
             space = ' ' * 2
             print(item.id, end=space)
-        # for i, tag in enumerate(item.tags):
-            # if tag.key_in_columns(tag.):
+        for column in self.key_columns:
+            printed = False
+            for tag in item.tags:
+                if tag.key == column:
+                    printed = True
+                    if tag.value:
+                        if not self.print_too_long(tag.value):
+                            space = self.space(tag.value)
+                            print(tag.value, end=space)
+                    else:
+                        space = self.space("<>")
+                        print("<>", end=space)
+            if not printed:
+                print('-' + ' ' * (self.indent_tags - 1), end='')
+        for i, tag in enumerate(item.tags):
+            if tag.key not in self.key_columns:
+                print(tag, end='')
+                if not i == len(item.tags) - 1:
+                    print(',', end='')
+        print()
 
     def space(self, string):
-        return ' ' * (self.indent_tags - len(string))
+        return ' ' * (self.indent_tags - len(str(string)))
 
     def print_too_long(self, tag):
-        if len(tag) > self.indent_tags - self.space_between_tags:
+        if len(str(tag)) > self.indent_tags - self.space_between_tags:
             space = ' ' * (self.space_between_tags - 2)
-            print(tag[0:self.indent_tags - self.space_between_tags] +
+            print(str(tag)[0:self.indent_tags - self.space_between_tags] +
                   '..' + space, end='')
             return True
         else:

@@ -115,6 +115,8 @@ parser_find.add_argument('-o', '--or-search',
 parser_find.add_argument('-A', '--auto-exclude',
                          help="Exclude the search phrase keys from the printed output", action='store_true')
 parser_find.add_argument(
+    '-c', '--columns', help='Comma-separated keys to give a separate column')
+parser_find.add_argument(
     '-e', '--exclude', help="Comma-separated keys from the returned tag search to exclude in the printed output, e.g. if resource is 'foo:bar, testing', then 'find foo:bar -e foo:bar' would return 'testing'")
 parser_find.add_argument(
     '-s', '--sort', help="Sort the tags of the resources based on keys", action='store_true')
