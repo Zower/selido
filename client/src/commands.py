@@ -202,19 +202,6 @@ def find(args):
         items, with_id=not args.no_id, key_columns=columns)
     printer.print()
 
-    # exclude = []
-    # if args.auto_exclude and args.tags:
-    #     for t in args.tags.split(','):
-    #         exclude.append(t.split(':')[0])
-    # if args.exclude:
-    #     for t in args.exclude.split(','):
-    #         exclude.append(t)
-    # items = tag.items_from_list_of_dict(
-    #     parsed['objects'], exclude, args.sort)
-    # printer = tag.TagPrinter(
-    #     items, key_columns=['test3', 'todo'], with_id=not args.no_id)
-    # printer.print()
-
 
 def get(args):
     args = set_defaults(args)

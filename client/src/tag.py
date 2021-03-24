@@ -29,7 +29,7 @@ def items_from_list_of_dict(dict_list, keys_to_ignore=[], sort=False):
                     tags.append(Tag(tag['key']))
         items.append(Item(item['id'], tags))
         if sort:
-            tags.sort()
+            tags.sort(key=lambda x: str(x))
     return items
 
 
