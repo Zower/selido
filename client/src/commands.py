@@ -196,10 +196,10 @@ def find(args):
 
     parsed = parse_response(r.text)
 
-    exclude = []
-    if args.auto_exclude and args.tags:
-        for t in args.tags.split(','):
-            exclude.append(t.split(':', 1)[0])
+    # exclude = []
+    # if args.auto_exclude and args.tags:
+    #     for t in args.tags.split(','):
+    #         exclude.append(t.split(':', 1)[0])
     if args.exclude:
         for t in args.exclude.split(','):
             exclude.append(t)
