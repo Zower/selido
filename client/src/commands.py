@@ -304,19 +304,26 @@ def check_url(args, auth=False):
 def check_user_cert(args):
     copy = args
     config = get_config()
-    if not args.username:
+    if not args.user_certs:
         un = config.get('Cert.username')
-        copy.username = un
+        copy.cert = (certsLocation / (un + '.crt'),
+                     certsLocation / (un + '.key'))
+        return copy
     else:
-        un = args.username
-    copy.cert = (certsLocation / (un + '.crt'), certsLocation / (un + '.key'))
-    return copy
+        split = args.user_certs.split(',')
+        if not len(split) == 2:
+            print(
+                "Please specify two locations for the certificate files, comma-separated")
+            exit(1)
+
+        args.cert = (Path(split[0]),
+                     Path(split[1]))
+        return args
 
 
 def check_ca_cert(args):
     if not args.ca_file:
         copy = args
-        config = get_config()
         copy.ca_file = certsLocation / 'ca.crt'
         return copy
     else:

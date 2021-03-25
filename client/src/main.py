@@ -21,9 +21,9 @@ parser_add.add_argument('tags', help='The tags to add')
 parser_add.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_add.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+    '-U', '--user-certs', help="Key and certificate to user for authentication, in the format: full cert path,full key path")
 parser_add.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-C', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_add.set_defaults(func=commands.add)
@@ -43,7 +43,7 @@ parser_authenticate_request.add_argument(
 parser_authenticate_request.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_authenticate_request.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-ca', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_authenticate_request.set_defaults(func=commands.auth_request)
@@ -54,9 +54,9 @@ parser_authenticate_verify = parser_authenticate_sub.add_parser(
 parser_authenticate_verify.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_authenticate_verify.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+    '-U', '--user-certs', help="Key and certificate to user for authentication, in the format: full cert path,full key path")
 parser_authenticate_verify.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-ca', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_authenticate_verify.set_defaults(func=commands.auth_verify)
@@ -79,9 +79,9 @@ parser_delete.add_argument('id', help='The id to delete')
 parser_delete.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_delete.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+    '-U', '--user-certs', help="Key and certificate to user for authentication, in the format: full cert path,full key path")
 parser_delete.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-ca', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_delete.set_defaults(func=commands.delete)
@@ -95,9 +95,9 @@ parser_get.add_argument('id', help='The id to get')
 parser_get.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_get.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+    '-U', '--user-certs', help="Key and certificate to user for authentication, in the format: full cert path,full key path")
 parser_get.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-ca', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_get.set_defaults(func=commands.get)
@@ -126,9 +126,9 @@ parser_find.add_argument(
 parser_find.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_find.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+    '-U', '--user-certs', help="Key and certificate to user for authentication, in the format: full cert path,full key path")
 parser_find.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-ca', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_find.set_defaults(func=commands.find)
@@ -145,11 +145,11 @@ parser_tag_add = parser_tag_sub.add_parser(
 parser_tag_add.add_argument('id', help='The id to tag')
 parser_tag_add.add_argument('tags', help='The tags to apply')
 parser_tag_add.add_argument(
+    '-U', '--user-certs', help="Key and certificate to user for authentication, in the format: full cert path,full key path")
+parser_tag_add.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_tag_add.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
-parser_tag_add.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-ca', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_tag_add.set_defaults(func=commands.add_tags)
@@ -161,11 +161,11 @@ parser_tag_del.add_argument(
     'id', help='The id to delete tags from')
 parser_tag_del.add_argument('tags', help='The tags to delete')
 parser_tag_del.add_argument(
+    '-U', '--user-certs', help="Key and certificate to user for authentication, in the format: full cert path,full key path")
+parser_tag_del.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_tag_del.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
-parser_tag_del.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-ca', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_tag_del.set_defaults(func=commands.del_tags)
@@ -180,9 +180,9 @@ parser_open.add_argument(
 parser_open.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_open.add_argument(
-    '-U', '--username', help="Username of the client file in ~/.selido/certs to use")
+    '-U', '--user-certs', help="Key and certificate to user for authentication, in the format: full cert path,full key path")
 parser_open.add_argument(
-    '-ca', '--ca-file', help="CA file to use in ~/.selido/certs"
+    '-ca', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
 parser_open.set_defaults(func=commands.open_file)
