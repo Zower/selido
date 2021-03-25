@@ -45,7 +45,7 @@ module.exports = class SelidoServer {
             var httpsServer = https.createServer(options, app)
 
             httpsServer.listen(this.port, "0.0.0.0", () => {
-                this.verbose('Selido server listening on port ' + this.port)
+                this.info('Selido server listening on port ' + this.port)
             });
 
             if (this.start_authserver) {
@@ -76,8 +76,9 @@ module.exports = class SelidoServer {
 
         // Search for tags
         app.post('/find/', async (req, res) => {
+            let keys = req.body.keys
             let tags = req.body.tags
-            let answer = await this.db.find(tags, req.body.and_search, req.body.all)
+            let answer = await this.db.find(keys, tags, req.body.and_search, req.body.all)
 
             this.verbose_print_answer(answer)
             res.status(answer.code).send(answer)
@@ -187,7 +188,7 @@ module.exports = class SelidoServer {
     }
 
     verbose(message) {
-        if (this.verbose && !this.quiet) {
+        if (this.verbosity && !this.quiet) {
             log.info(message)
         }
     }

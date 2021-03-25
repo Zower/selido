@@ -109,8 +109,8 @@ parser_get.set_defaults(func=commands.get)
 # Find command
 parser_find = subparsers.add_parser('find',
                                     aliases=['f'],
-                                    help='Find a resource in selido based on tags')
-parser_find.add_argument('tags', help='The tags to find', nargs='?')
+                                    help='Find resources in selido')
+parser_find.add_argument('searchterm', help='Comma separated keys to find, e.g. "selido find foo,bar" will look for anything with they keys foo and bar. Putting \'+\' in front of a tag indicates to search for a key:value, e.g. "+foo:true,bar,+baz:false".', nargs='?')
 parser_find.add_argument(
     '-a', '--all', help='Find all resources', action='store_true')
 parser_find.add_argument('-o', '--or-search',
@@ -124,7 +124,7 @@ parser_find.add_argument(
 parser_find.add_argument(
     '-s', '--sort', help="Sort the tags of the resources based on keys", action='store_true')
 parser_find.add_argument(
-    '-N', '--no-id', help="When not using columned search, dont include the IDs of the resource", action='store_true'
+    '-N', '--no-id', help="Dont include the IDs of the resource in output", action='store_true'
 )
 parser_find.add_argument(
     '-u', '--url', help="URL:port to connect to")

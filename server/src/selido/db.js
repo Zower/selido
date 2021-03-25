@@ -243,13 +243,9 @@ module.exports = class SelidoDB {
         }
     }
 
-    async find(tags, and_search, all = false) {
+    // Tags must be a list of objects, e.g. [{key: 'foo', value:'bar'}, {key: 'baz', value:'foo'}]. Keys must be list of strings, while and_search and all are booleans
+    async find(keys = [], tags = [], and_search = true, all = false) {
         const action = 'find'
-
-        // Error checking
-        if (!(typeof tags !== 'undefined' && typeof and_search !== 'undefined')) {
-            return new SelidoResponse(action, failed, 'Undefined parameters sent', 400)
-        }
 
         try {
             // Return all resources
@@ -261,21 +257,37 @@ module.exports = class SelidoDB {
                 return new SelidoResponse(action, success, 'Found resource(s)', 200, prettyConvert(resources, true))
             }
 
-            // No tags
-            else if (tags.length == 0) {
-                return new SelidoResponse(action, failed, 'No tags specified', 400)
+            // No tags or keys
+            else if (keys.length == 0 && tags.length == 0) {
+                return new SelidoResponse(action, failed, 'No keys or tags specified', 400)
             }
 
-            // Finds all resources that have all of the tags specified, but not all the possible tags
+            // Finds all resources that have all of the tags and keys specified, but not all the possible tags
             else if (and_search) {
-                let resources = await Resource.find({ tags: { $all: tags } })
-                    .exec()
+                // let resources = await Resource.find({ tags: { $all: keys } })
+                //     .exec()
+                var resources;
+                // Both tag and value search
+                if (tags.length > 0 && keys.length > 0) {
+                    resources = await Resource.find({ 'tags.key': { $all: keys }, 'tags': { $all: tags } })
+                        .exec()
+                }
+                // Just tag search
+                else if (tags.length > 0) {
+                    resources = await Resource.find({ 'tags': { $all: tags } })
+                        .exec()
+                }
+                // Just keys
+                else {
+                    resources = await Resource.find({ 'tags.key': { $all: keys } })
+                        .exec()
+                }
                 if (resources.length == 0) {
-                    return new SelidoResponse(action, failed, 'No resources with those tags', 404)
+                    return new SelidoResponse(action, failed, 'No resources with those tags/values', 404)
                 }
                 return new SelidoResponse(action, success, 'Found resource(s)', 200, prettyConvert(resources, true))
             }
-            // One of the tags has to match
+            // One of the tags or keys has to match
             else {
                 let to_find = []
                 let i = 0
@@ -285,10 +297,34 @@ module.exports = class SelidoDB {
                     to_find[i] = { tags: tag }
                     i++
                 })
-                let resources = await Resource.find({ $or: to_find })
-                    .exec()
+                var resources;
+                if (tags.length > 0 && keys.length > 0) {
+                    // Jank shit incoming
+                    let resources_keys = await Resource.find({ 'tags.key': { $in: keys } })
+                        .exec()
+                    resources = resources_keys
+                    let resources_tags = await Resource.find({ $or: to_find })
+                        .exec()
+                    resources_tags.forEach(res => {
+                        resources.push(res)
+                    })
+                    // This is what I wanna do, no idea why it doesnt work..
+                    // resources = await Resource.find({ $or: [{ 'tags.key': { $in: keys }, $or: to_find }] })
+                    //     .exec()
+                }
+                // Just tag search
+                else if (tags.length > 0) {
+                    resources = await Resource.find({ $or: to_find })
+                        .exec()
+                }
+                // Just keys
+                else {
+                    resources = await Resource.find({ 'tags.key': { $in: keys } })
+                        .exec()
+                }
+
                 if (resources.length == 0) {
-                    return new SelidoResponse(action, failed, 'No resources with those tags', 404)
+                    return new SelidoResponse(action, failed, 'No resources with those tags/values', 404)
                 }
                 return new SelidoResponse(action, success, 'Found resource(s)', 200, prettyConvert(resources, true))
             }
@@ -313,7 +349,7 @@ module.exports = class SelidoDB {
     }
 
     verbose(message) {
-        if (this.verbose && !this.quiet) {
+        if (this.verbosity && !this.quiet) {
             log.info(message)
         }
     }

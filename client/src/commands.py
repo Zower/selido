@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import os
 import platform
+import re
 
 from config_file import ConfigFile, ParsingError
 
@@ -55,7 +56,7 @@ def add(args):
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(
-        args.tags))
+        split_tags(args.tags)))
 
     r = send_request(args, Method.POST, '/resource/', body)
 
@@ -179,12 +180,20 @@ def find(args):
     args = set_defaults(args)
 
     body = {}
-    tags = make_tags(args.tags)
-    body = add_to_body(body, 'tags', tags)
-    body = add_to_body(body, 'and_search', not args.or_search)
-    body = add_to_body(body, 'all', args.all)
 
-    r = send_request(args, Method.POST, '/find/', body)
+    if args.all:
+        body = add_to_body(body, 'all', args.all)
+        r = send_request(args, Method.POST, '/find/', body)
+    else:
+        parsed_search = parse_search(args.searchterm)
+
+        tags = make_tags(parsed_search.tags)
+        body = add_to_body(body, 'keys', parsed_search.keys)
+        body = add_to_body(body, 'tags', tags)
+        body = add_to_body(body, 'and_search', not args.or_search)
+
+        r = send_request(args, Method.POST, '/find/', body)
+
     parsed = parse_response(r.text)
 
     exclude = []
@@ -240,7 +249,7 @@ def add_tags(args):
     args = set_defaults(args)
 
     body = {}
-    body = add_to_body(body, 'tags', make_tags(args.tags))
+    body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
 
     r = send_request(args, Method.POST, '/tag/' + args.id, body)
 
@@ -251,7 +260,7 @@ def del_tags(args):
     args = set_defaults(args)
 
     body = {}
-    body = add_to_body(body, 'tags', make_tags(args.tags))
+    body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
 
     r = send_request(args, Method.DELETE, '/tag/' + args.id, body)
 
@@ -335,20 +344,65 @@ def check_ca_cert(args):
         return args
 
 
-def make_tags(tags):  # Make tags into json
-    tags_list = []
+# Returns a Search class with the different options set.
+def parse_search(term):
+    keys = []
+    tags = []
+    not_keys = []
+    not_tags = []
+
+    if not term:
+        print("No search fields specified")
+        exit(1)
+
+    values = term.split(',')
+
+    for value in values:
+        # Finds everything that begins with +-, -+, + or -, then returns the matches
+        special = re.findall("^\+-|^-\+|^-|^\+", value)
+
+        # Just a key
+        if len(special) == 0:
+            keys.append(value)
+        else:
+            # We are only interested in the first match, as its the beginning of the string anyway
+            special = special[0]
+
+            # Contains + and -
+            if len(special) == 2:
+                # Both a value and a not term
+                not_tags.append(value[2:])
+
+            # Contains just - or +
+            else:
+                # Just a value
+                if ('+' in special):
+                    tags.append(value[1:])
+                # Regular not key
+                else:
+                    not_keys.append(value[1:])
+
+    return Search(keys, tags, not_keys, not_tags)
+
+
+def split_tags(tags):
     if tags:
         tags = tags.split(',')
-        for tag in tags:
-            tag = tag.split(':', 1)
+    return tags
 
-            if len(tag) == 1:
-                tags_list.append({'key': tag[0]})
+
+def make_tags(tags):  # Make tags into json
+    tags_list = []
+    for tag in tags:
+        tag = tag.split(':', 1)
+
+        if len(tag) == 1:
+            tags_list.append({'key': tag[0]})
+        else:
+            if tag[1] != '':
+                tags_list.append({'key': tag[0], 'value': tag[1]})
             else:
-                if tag[1] != '':
-                    tags_list.append({'key': tag[0], 'value': tag[1]})
-                else:
-                    tags_list.append({'key': tag[0]})
+                tags_list.append({'key': tag[0]})
     return tags_list
 
 
@@ -422,6 +476,14 @@ def print_sha3_hex_hash(string):
 
     print("Hash is:")
     print(s.hexdigest())
+
+
+class Search:
+    def __init__(self, keys=[], tags=[], not_keys=[], not_tags=[]):
+        self.keys = keys
+        self.tags = tags
+        self.not_keys = not_keys
+        self.not_tags = not_tags
 
 
 class Method(Enum):  # Maybe more to be added later

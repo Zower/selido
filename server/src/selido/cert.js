@@ -266,7 +266,7 @@ module.exports = class SelidoCert {
     }
 
     verbose(message) {
-        if (this.verbose && !this.quiet) {
+        if (this.verbosity && !this.quiet) {
             log.info(message)
         }
     }
