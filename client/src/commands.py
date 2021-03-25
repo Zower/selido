@@ -190,7 +190,7 @@ def find(args):
     exclude = []
     if args.auto_exclude and args.tags:
         for t in args.tags.split(','):
-            exclude.append(t.split(':')[0])
+            exclude.append(t.split(':', 1)[0])
     if args.exclude:
         for t in args.exclude.split(','):
             exclude.append(t)
@@ -211,7 +211,12 @@ def get(args):
 
     r = send_request(args, Method.GET, '/get/' + args.id)
 
-    parsed = parse_response(r.text, True)
+    parsed = parse_response(r.text)
+
+    items = tag.items_from_list_of_dict(parsed['objects'])
+
+    printer = tag.TagPrinter(items, with_id=not args.no_id)
+    printer.print()
 
 
 def open_file(args):
@@ -353,10 +358,10 @@ def add_to_body(body, name, item):  # Returns a copy of the body with the new it
     return copy
 
 
-def parse_response(response, print=False):  # Parse response as JSON
+def parse_response(response, print_message=False):  # Parse response as JSON
     parsed = json.loads(response)
-    if print:
-        print_parsed_response(parsed)
+    if print_message:
+        print(parsed['message'])
     return parsed
 
 
@@ -387,7 +392,7 @@ def set_endpoint(url):
         else:
             config.set('Endpoint.port', "")
     except:
-        print("Invalid url, Should be: Domain:Port or IP:Port")
+        print("Invalid url, Should be: protocol://domain:port or protocol://IP:port")
         exit(1)
     config.save()
 
@@ -409,33 +414,6 @@ def get_config():
         print('Configuration file wasnt found at location ' +
               str(configLocation) + ', maybe run selido init?')
         exit(1)
-
-#############################################
-# Printers, should be its own file?
-
-
-def print_parsed_response(parsed):
-    if parsed['action'] == 'get' or parsed['action'] == 'find':
-        print_tags(parsed)
-    else:
-        print(parsed)
-
-
-def print_tags(parsed):
-    if parsed['code'] == 200:
-        for el in parsed['objects']:
-            print(el['id'], end='\t')
-            list_tags = []
-            for tag in el['tags']:
-                tag_str = tag['key']
-                if 'value' in tag:
-                    tag_str += ':' + tag['value']
-                list_tags.append(tag_str)
-            print(", ".join(list_tags))
-    else:
-        print(parsed['message'])
-        print('------')
-        print(parsed)
 
 
 def print_sha3_hex_hash(string):
