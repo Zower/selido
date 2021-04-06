@@ -1,5 +1,7 @@
 import argparse
 import commands
+import auth
+import config
 
 parser = argparse.ArgumentParser(
     prog='Selido client',
@@ -46,7 +48,7 @@ parser_authenticate_request.add_argument(
     '-C', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
-parser_authenticate_request.set_defaults(func=commands.auth_request)
+parser_authenticate_request.set_defaults(func=auth.request)
 
 
 parser_authenticate_verify = parser_authenticate_sub.add_parser(
@@ -59,7 +61,7 @@ parser_authenticate_verify.add_argument(
     '-C', '--ca-file', help="Full path of the CA.crt file to use"
 )
 
-parser_authenticate_verify.set_defaults(func=commands.auth_verify)
+parser_authenticate_verify.set_defaults(func=auth.verify)
 
 
 parser_authenticate_hash = parser_authenticate_sub.add_parser(
@@ -68,7 +70,7 @@ parser_authenticate_hash = parser_authenticate_sub.add_parser(
 parser_authenticate_hash.add_argument(
     '-C', '--ca-file', help='Ca file to use from ~/.selido/certs')
 
-parser_authenticate_hash.set_defaults(func=commands.auth_hash)
+parser_authenticate_hash.set_defaults(func=auth.hash)
 
 ##################
 # Delete command
@@ -93,7 +95,7 @@ parser_get = subparsers.add_parser('get',
                                    help='Get one resource from Selido server by id')
 parser_get.add_argument('id', help='The id to get')
 parser_get.add_argument(
-    '-N', '--no-id', help="When not using columned search, dont include the IDs of the resource", action='store_true'
+    '-N', '--no-id', help="Dont include the IDs of the resource in output", action='store_true'
 )
 parser_get.add_argument(
     '-u', '--url', help="URL:port to connect to")
@@ -125,6 +127,9 @@ parser_find.add_argument(
     '-s', '--sort', help="Sort the tags of the resources based on keys", action='store_true')
 parser_find.add_argument(
     '-N', '--no-id', help="Dont include the IDs of the resource in output", action='store_true'
+)
+parser_find.add_argument(
+    '--count', help="Count the number of instances returned, instead of outputting them", action='store_true'
 )
 parser_find.add_argument(
     '-u', '--url', help="URL:port to connect to")
@@ -203,16 +208,16 @@ parser_conf_endpoint = parser_conf_sub.add_parser(
     'endpoint', aliases=['e', 'end'], help='Which endpoint to connect to')
 parser_conf_endpoint.add_argument(
     'url', help='The full URL to use as endpoint, e.g https://localhost:3912 or https://example.com:4023')
-parser_conf_endpoint.set_defaults(func=commands.endpoint)
+parser_conf_endpoint.set_defaults(func=config.endpoint)
 
 parser_conf_username = parser_conf_sub.add_parser('username', aliases=[
     'u', 'un', 'user'], help='Which pre-fix filename the client certs have in /.selido/certs')
 parser_conf_username.add_argument(
     'username', help='The username that was specified when creating this client key, if filename is ~/.selido/certs/foo.crt, this setting should be \'foo\'')
-parser_conf_username.set_defaults(func=commands.username)
+parser_conf_username.set_defaults(func=config.username)
 
 parser_init = subparsers.add_parser('init', help='Initial config of selido')
-parser_init.set_defaults(func=commands.init)
+parser_init.set_defaults(func=config.init)
 
 args = parser.parse_args()
 

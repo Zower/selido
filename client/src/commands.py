@@ -1,58 +1,21 @@
 import requests
-import json
-from enum import Enum, auto
-import hashlib
-from threading import Timer
-from pathlib import Path
 import subprocess
 import os
 import platform
-import re
+import json
 
-from config_file import ConfigFile, ParsingError
-
-from option_chooser import OptionChooser
+import helpers
 import tag
 
-configLocation = Path(str(Path.home()) + '/.selido/')
-certsLocation = Path(str(Path.home()) + '/.selido/certs/')
-configName = 'conf.toml'
+from enum import Enum, auto
 
-##############################################
-# Configuration commands
-
-
-def init(args):  # Should be more robust
-    try:
-        Path(configLocation).mkdir(parents=True, exist_ok=True)
-        Path(certsLocation).mkdir(parents=True, exist_ok=True)
-        f = open(configLocation / configName, "x")
-    except FileExistsError:
-        print('Config file directory or certs directory already exists')
-        exit(1)
-
-    e = input(
-        "Where to connect to selido? If running locally it is likely \"https://localhost:3912\": ")
-
-    set_endpoint(e)
-    u = input(
-        "Type an identifying username: ")
-    set_username(u)
-
-
-def endpoint(args):
-    set_endpoint(args.url)
-
-
-def username(args):
-    set_username(args.username)
 
 #############################################
 # Online commands
 
 
 def add(args):
-    args = set_defaults(args)
+    args = helpers.check_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(
@@ -63,113 +26,8 @@ def add(args):
     parsed = parse_response(r.text, True)
 
 
-def auth_request(args):
-    args = check_url(args, True)
-
-    # Yeah..
-    import urllib3
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-    r = requests.get(args.url + '/authenticate/ca/', verify=False)
-
-    parsed = parse_response(r.text, False)
-
-    print_sha3_hex_hash(parsed['objects'])
-
-    ans = input(
-        "Type 'selido auth hash' on an authenticated machine, then make absolutely sure the two hashes match, if not, ABORT. Continue? (y/n): ")
-
-    if ans == 'y':
-        try:
-            with open(certsLocation / 'ca.crt', "w") as f:
-                f.write(parsed['objects'])
-        except OSError as e:
-            print(e)
-            exit(1)
-
-        a = requests.get(args.url + '/authenticate/' + args.name,
-                         verify=certsLocation / 'ca.crt')
-        parsed = parse_response(a.text, False)
-
-        try:
-            with open(certsLocation / (args.name + '.key'), "w") as f:
-                f.write(parsed['objects']['key'])
-        except OSError as e:
-            print(e)
-            exit(1)
-
-        print("-------------------------------------------------------------------")
-        print("Your code is: ", end='')
-        for code in parsed['objects']['code']:
-            print(code, end=" ")
-        print()
-        print("Type selido auth verify on an authenticated client.")
-        print("-------------------------------------------------------------------")
-        print("Waiting for verification from authenticated client....")
-
-        body = {}
-        obj = {'name': args.name, 'code': parsed['objects']['code']}
-        body = add_to_body(body, 'code', obj)
-
-        Timer(0.5, auth_authenticated_yet, [
-            args, body]).start()
-
-
-def auth_authenticated_yet(args, body):
-    r = requests.post(args.url + '/authenticated/',
-                      json=body,
-                      verify=certsLocation / 'ca.crt')
-
-    parsed = parse_response(r.text, False)
-    if r.status_code == 200:
-        try:
-            with open(certsLocation / (args.name + '.crt'), "w") as f:
-                f.write(parsed['objects'])
-            print("You are now verified!")
-            exit(0)
-        except OSError as e:
-            print(e)
-            exit(1)
-    elif r.status_code == 401:
-        # Still waiting
-        Timer(0.5, auth_authenticated_yet, [args, body]).start()
-    elif r.status_code == 403:
-        print(parsed['message'])
-        exit(1)
-    else:
-        print("Something went wrong, exiting")
-        print(parsed)
-        exit(1)
-
-
-def auth_hash(args):
-    args = check_ca_cert(args)
-
-    with open(args.ca_file, "r") as f:
-        print_sha3_hex_hash(str(f.read()))
-
-
-def auth_verify(args):
-    args = set_defaults(args)
-
-    r = send_request(args, Method.GET, '/authenticate/')
-    parsed = parse_response(r.text, False)
-
-    oc = OptionChooser(parsed['objects'])
-    send = oc.get_answer()
-
-    print(send)
-
-    body = {}
-    body = add_to_body(body, "code", send)
-
-    p = send_request(args, Method.POST, '/authenticate/', body)
-    parsed = parse_response(p.text, False)
-    print(parsed['message'])
-
-
 def delete(args):
-    args = set_defaults(args)
+    args = helpers.check_defaults(args)
 
     r = send_request(args, Method.DELETE, '/resource/' + args.id)
 
@@ -177,7 +35,7 @@ def delete(args):
 
 
 def find(args):
-    args = set_defaults(args)
+    args = helpers.check_defaults(args)
 
     body = {}
 
@@ -185,7 +43,7 @@ def find(args):
         body = add_to_body(body, 'all', args.all)
         r = send_request(args, Method.POST, '/find/', body)
     else:
-        parsed_search = parse_search(args.searchterm)
+        parsed_search = helpers.parse_search_tags(args.searchterm)
 
         tags = make_tags(parsed_search.tags)
         body = add_to_body(body, 'keys', parsed_search.keys)
@@ -216,7 +74,7 @@ def find(args):
 
 
 def get(args):
-    args = set_defaults(args)
+    args = helpers.check_defaults(args)
 
     r = send_request(args, Method.GET, '/get/' + args.id)
 
@@ -229,7 +87,7 @@ def get(args):
 
 
 def open_file(args):
-    args = set_defaults(args)
+    args = helpers.check_defaults(args)
 
     r = send_request(args, Method.GET, '/get/' + args.id)
 
@@ -246,7 +104,7 @@ def open_file(args):
 
 
 def add_tags(args):
-    args = set_defaults(args)
+    args = helpers.check_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
@@ -257,7 +115,7 @@ def add_tags(args):
 
 
 def del_tags(args):
-    args = set_defaults(args)
+    args = helpers.check_defaults(args)
 
     body = {}
     body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
@@ -267,7 +125,10 @@ def del_tags(args):
     parse_response(r.text, True)
 
 
-def send_request(args, method, url, body=None):  # Mother command
+#############################################
+# Helpers
+
+def send_request(args, method, url, body=None):  # Mother send command
     s = requests.Session()
     s.verify = args.ca_file
     s.cert = args.cert
@@ -288,107 +149,11 @@ def send_request(args, method, url, body=None):  # Mother command
         exit(1)
     return r
 
-#############################################
-# Helpers
-
-
-def set_defaults(args):
-    args = check_url(args)
-    args = check_user_cert(args)
-    args = check_ca_cert(args)
-    return args
-
-
-def check_url(args, auth=False):
-    if not args.url:
-        copy = args
-        config = get_config()
-        copy.url = config.get('Endpoint.url')
-        port = config.get('Endpoint.port')
-        if port != '':
-            if auth:
-                copy.url += ':' + str(int(port) + 1)
-            else:
-                copy.url += ':' + port
-        return copy
-    else:
-        return args
-
-
-def check_user_cert(args):
-    copy = args
-    config = get_config()
-    if not args.user_certs:
-        un = config.get('Cert.username')
-        copy.cert = (certsLocation / (un + '.crt'),
-                     certsLocation / (un + '.key'))
-        return copy
-    else:
-        split = args.user_certs.split(',')
-        if not len(split) == 2:
-            print(
-                "Please specify two locations for the certificate files, comma-separated")
-            exit(1)
-
-        args.cert = (Path(split[0]),
-                     Path(split[1]))
-        return args
-
-
-def check_ca_cert(args):
-    if not args.ca_file:
-        copy = args
-        copy.ca_file = certsLocation / 'ca.crt'
-        return copy
-    else:
-        return args
-
-
-# Returns a Search class with the different options set.
-def parse_search(term):
-    keys = []
-    tags = []
-    not_keys = []
-    not_tags = []
-
-    if not term:
-        print("No search fields specified")
-        exit(1)
-
-    values = term.split(',')
-
-    for value in values:
-        # Finds everything that begins with +-, -+, + or -, then returns the matches
-        special = re.findall("^\+-|^-\+|^-|^\+", value)
-
-        # Just a key
-        if len(special) == 0:
-            keys.append(value)
-        else:
-            # We are only interested in the first match, as its the beginning of the string anyway
-            special = special[0]
-
-            # Contains + and -
-            if len(special) == 2:
-                # Both a value and a not term
-                not_tags.append(value[2:])
-
-            # Contains just - or +
-            else:
-                # Just a value
-                if ('+' in special):
-                    tags.append(value[1:])
-                # Regular not key
-                else:
-                    not_keys.append(value[1:])
-
-    return Search(keys, tags, not_keys, not_tags)
-
 
 def split_tags(tags):
     if tags:
-        tags = tags.split(',')
-    return tags
+        copy = tags.split(',')
+    return copy
 
 
 def make_tags(tags):  # Make tags into json
@@ -406,10 +171,9 @@ def make_tags(tags):  # Make tags into json
     return tags_list
 
 
-def add_to_body(body, name, item):  # Returns a copy of the body with the new item appended
-    copy = body
+def add_to_body(body, name, item):  # Returns the body with the new item appended
     body[name] = item
-    return copy
+    return body
 
 
 def parse_response(response, print_message=False):  # Parse response as JSON
@@ -419,72 +183,8 @@ def parse_response(response, print_message=False):  # Parse response as JSON
     return parsed
 
 
-def set_username(username):
-    config = get_config()
-    try:
-        config.set('Cert.username', username)
-    except:
-        print("Couldn't set username, make sure username is one word")
-        exit(1)
-    config.save()
-
-
-def set_endpoint(url):
-    config = get_config()
-
-    url_split = url.split(':')
-
-    # This is some jank shit, but https:// get split up so I'm merging them back together
-    new_url = []
-    new_url.append(url_split[0] + ':' + url_split[1])
-    if len(url_split) == 3:
-        new_url.append(url_split[2])
-    try:
-        config.set('Endpoint.url', new_url[0])
-        if len(new_url) == 2:
-            config.set('Endpoint.port', new_url[1])
-        else:
-            config.set('Endpoint.port', "")
-    except:
-        print("Invalid url, Should be: protocol://domain:port or protocol://IP:port")
-        exit(1)
-    config.save()
-
-
-def get_config():
-    try:
-        config = ConfigFile(configLocation / configName)
-        return config
-    except ParsingError:
-        print("Could not parse the config file, check that it hasn't been modified. Location: " +
-              configLocation + configName)
-        exit(1)
-    except ValueError:
-        print(
-            "Config file extension that isn't supported was used or is a directory"
-        )
-        exit(1)
-    except FileNotFoundError:
-        print('Configuration file wasnt found at location ' +
-              str(configLocation) + ', maybe run selido init?')
-        exit(1)
-
-
-def print_sha3_hex_hash(string):
-    s = hashlib.sha3_256()
-    s.update(string.encode('utf-8'))
-
-    print("Hash is:")
-    print(s.hexdigest())
-
-
-class Search:
-    def __init__(self, keys=[], tags=[], not_keys=[], not_tags=[]):
-        self.keys = keys
-        self.tags = tags
-        self.not_keys = not_keys
-        self.not_tags = not_tags
-
+#############################################
+# Classes
 
 class Method(Enum):  # Maybe more to be added later
     GET = auto()
