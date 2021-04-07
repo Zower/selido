@@ -67,6 +67,7 @@ class TagPrinter:
                 print("ID", "Tags", sep=' ' * 24)
 
             if len(self.tags) == 1:
+                self.oc.push(self.tags[0].id)
                 print('0', end='     ')
                 self.print_item(self.tags[0])
             else:
@@ -88,6 +89,7 @@ class TagPrinter:
         print("Other tags\n")
 
         if len(self.tags) == 1:
+            self.oc.push(self.tags[0].id)
             print('0     ')
             self.print_item(self.tags[0])
         else:
