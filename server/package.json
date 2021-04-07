@@ -1,7 +1,7 @@
 {
   "name": "selido-server",
   "version": "0.1.0",
-  "description": "Server-side book library",
+  "description": "Server-side tag database",
   "main": "src/main.js",
   "scripts": {
     "start": "node src/main.js",

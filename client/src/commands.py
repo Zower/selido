@@ -29,7 +29,9 @@ def add(args):
 def delete(args):
     args = helpers.check_defaults(args)
 
-    r = send_request(args, Method.DELETE, '/resource/' + args.id)
+    parsed_ids = helpers.parse_ids(args.searchterm)
+
+    r = send_request(args, Method.DELETE, '/resource/' + parsed_ids[0])
 
     parsed = parse_response(r.text, True)
 
@@ -76,7 +78,9 @@ def find(args):
 def get(args):
     args = helpers.check_defaults(args)
 
-    r = send_request(args, Method.GET, '/get/' + args.id)
+    parsed_ids = helpers.parse_ids(args.searchterm)
+
+    r = send_request(args, Method.GET, '/get/' + parsed_ids[0])
 
     parsed = parse_response(r.text)
 
@@ -89,7 +93,9 @@ def get(args):
 def open_file(args):
     args = helpers.check_defaults(args)
 
-    r = send_request(args, Method.GET, '/get/' + args.id)
+    parsed_ids = helpers.parse_ids(args.searchterm)
+
+    r = send_request(args, Method.GET, '/get/' + parsed_ids[0])
 
     parsed = parse_response(r.text)
     item = tag.items_from_list_of_dict(parsed['objects'])[0]
@@ -109,7 +115,9 @@ def add_tags(args):
     body = {}
     body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
 
-    r = send_request(args, Method.POST, '/tag/' + args.id, body)
+    parsed_ids = helpers.parse_ids(args.searchterm)
+
+    r = send_request(args, Method.POST, '/tag/' + parsed_ids[0], body)
 
     parse_response(r.text, True)
 
@@ -120,7 +128,9 @@ def del_tags(args):
     body = {}
     body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
 
-    r = send_request(args, Method.DELETE, '/tag/' + args.id, body)
+    parsed_ids = helpers.parse_ids(args.searchterm)
+
+    r = send_request(args, Method.DELETE, '/tag/' + parsed_ids[0], body)
 
     parse_response(r.text, True)
 

@@ -1,3 +1,6 @@
+import option
+
+
 class Tag:
     def __init__(self, key, value=None):
         self.key = key
@@ -11,7 +14,7 @@ class Tag:
 
 
 class Item:
-    # Tags is a list of Tags
+    # Tags is a list of type Tag
     def __init__(self, id, tags):
         self.id = id
         self.tags = tags
@@ -29,6 +32,7 @@ def items_from_list_of_dict(dict_list, keys_to_ignore=[], sort=False):
                     tags.append(Tag(tag['key']))
         items.append(Item(item['id'], tags))
         if sort:
+            # Forcing sort to use string representation of tag
             tags.sort(key=lambda x: str(x))
     return items
 
@@ -44,17 +48,54 @@ class TagPrinter:
             self.space_between_tags = 3
         self.with_id = with_id
         self.key_columns = key_columns
+        self.oc = option.Option()
 
     def print(self):
         if self.key_columns:
             self.print_with_columns()
         else:
+            # This means there are more indexes than available space so indent some more
+            if len(self.tags) > 10000:
+                i_space = ' ' * (len('1000') - 4)
+                print("Index", end=i_space)
+                t_space = ' '
+            # 5 spaces is enough
+            else:
+                t_space = ' ' * 5
+                print("Index", end=' ')
             if self.with_id:
-                space = ' ' * 24
-                print("ID", "Tags", sep=space)
+                print("ID", "Tags", sep=' ' * 24)
 
-            for item in self.tags:
-                self.print_item(item)
+            if len(self.tags) == 1:
+                print('0', end='     ')
+                self.print_item(self.tags[0])
+            else:
+                for i, item in enumerate(self.tags, 1):
+                    self.oc.push(item.id)
+                    print(i, end=t_space)
+                    self.print_item(item)
+            self.oc.save()
+
+    def print_with_columns(self):
+        if self.with_id:
+            space = ' ' * 24
+            print("Index ID", end=space)
+
+        for col in self.key_columns:
+            if not self.print_too_long(col):
+                space = self.space(col)
+                print(col, end=space)
+        print("Other tags\n")
+
+        if len(self.tags) == 1:
+            print('0     ')
+            self.print_item(self.tags[0])
+        else:
+            for i, item in enumerate(self.tags, 1):
+                self.oc.push(item.id)
+                print(i, end='     ')
+                self.print_item_columned(item)
+        self.oc.save()
 
     def print_item(self, item):
         if self.with_id:
@@ -67,20 +108,6 @@ class TagPrinter:
                 if not i == len(item.tags) - 1:
                     print(space, end='')
         print()
-
-    def print_with_columns(self):
-        if self.with_id:
-            space = ' ' * 24
-            print("ID", end=space)
-
-        for col in self.key_columns:
-            if not self.print_too_long(col):
-                space = self.space(col)
-                print(col, end=space)
-        print("Other tags\n")
-
-        for item in self.tags:
-            self.print_item_columned(item)
 
     def print_item_columned(self, item):
         # Print columned tags, then rest

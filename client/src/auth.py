@@ -3,7 +3,7 @@ import requests
 import commands
 import helpers
 import config
-from option_chooser import OptionChooser
+import option
 
 from threading import Timer
 
@@ -28,6 +28,7 @@ def request(args):
         try:
             with open(config.certs_location / 'ca.crt', "w") as f:
                 f.write(parsed['objects'])
+                f.close()
         except OSError as e:
             print(e)
             exit(1)
@@ -39,6 +40,7 @@ def request(args):
         try:
             with open(config.certs_location / (args.name + '.key'), "w") as f:
                 f.write(parsed['objects']['key'])
+                f.close()
         except OSError as e:
             print(e)
             exit(1)
@@ -100,8 +102,8 @@ def verify(args):
     r = commands.send_request(args, commands.Method.GET, '/authenticate/')
     parsed = commands.parse_response(r.text, False)
 
-    oc = OptionChooser(parsed['objects'])
-    send = oc.get_answer()
+    oc = option.Option(parsed['objects'])
+    send = oc.print_and_return_answer()
 
     print(send)
 

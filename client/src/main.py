@@ -77,7 +77,8 @@ parser_authenticate_hash.set_defaults(func=auth.hash)
 parser_delete = subparsers.add_parser('delete',
                                       aliases=['d', 'del'],
                                       help='delete resources from selido')
-parser_delete.add_argument('id', help='The id to delete')
+parser_delete.add_argument(
+    'searchterm', help='The ids to delete, in comma-separated format. Also accepts previously cached indices.')
 parser_delete.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_delete.add_argument(
@@ -93,7 +94,8 @@ parser_delete.set_defaults(func=commands.delete)
 parser_get = subparsers.add_parser('get',
                                    aliases=['g'],
                                    help='Get one resource from Selido server by id')
-parser_get.add_argument('id', help='The id to get')
+parser_get.add_argument(
+    'searchterm', help='The ids to get, in comma-separated format. Also accepts previously cached indices.')
 parser_get.add_argument(
     '-N', '--no-id', help="Dont include the IDs of the resource in output", action='store_true'
 )
@@ -150,7 +152,8 @@ parser_tag_sub.required = True
 
 parser_tag_add = parser_tag_sub.add_parser(
     'add', aliases=['a'], help='Add tags to resource')
-parser_tag_add.add_argument('id', help='The id to tag')
+parser_tag_add.add_argument(
+    'searchterm', help='The ids to add tags to, in comma-separated format. Also accepts previously cached indices.')
 parser_tag_add.add_argument('tags', help='The tags to apply')
 parser_tag_add.add_argument(
     '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path")
@@ -166,7 +169,7 @@ parser_tag_add.set_defaults(func=commands.add_tags)
 parser_tag_del = parser_tag_sub.add_parser(
     'delete', aliases=['d', 'del'], help='Delete tags from resource')
 parser_tag_del.add_argument(
-    'id', help='The id to delete tags from')
+    'searchterm', help='The ids to delete the tags from, in comma-separated format. Also accepts previously cached indices.')
 parser_tag_del.add_argument('tags', help='The tags to delete')
 parser_tag_del.add_argument(
     '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path")
@@ -183,7 +186,7 @@ parser_tag_del.set_defaults(func=commands.del_tags)
 parser_open = subparsers.add_parser(
     'open', aliases=['o'], help="Open a resource with a 'path:<PATH>' tag in the default application.")
 parser_open.add_argument(
-    'id', help='The id of the item to open'
+    'searchterm', help='The id to open. Also accepts previously cached indices.'
 )
 parser_open.add_argument(
     '-u', '--url', help="URL:port to connect to")

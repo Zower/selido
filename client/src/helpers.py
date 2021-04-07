@@ -2,6 +2,7 @@ import re
 import hashlib
 
 import config
+import option
 
 from pathlib import Path
 
@@ -69,6 +70,21 @@ def check_ca_cert(args):
         return args
     else:
         return args
+
+
+def parse_ids(search_term):  # Parses multiple ids, also checks cache if its just a basic number
+    ids = []
+    values = search_term.split(',')
+    oc = option.Option()
+
+    for value in values:
+        # Regular id
+        if len(value) == 24:
+            ids.append(value)
+        else:
+            ids.append(oc.find_cached(value))
+
+    return ids
 
 
 # Returns a Search class with the different options set.
