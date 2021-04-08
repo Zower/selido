@@ -83,7 +83,6 @@ def get(args):
     r = send_request(args, Method.GET, '/get/' + parsed_ids[0])
 
     parsed = parse_response(r.text)
-
     items = tag.items_from_list_of_dict(parsed['objects'])
 
     printer = tag.TagPrinter(items, with_id=not args.no_id)
@@ -186,16 +185,20 @@ def add_to_body(body, name, item):  # Returns the body with the new item appende
     return body
 
 
-def parse_response(response, print_message=False):  # Parse response as JSON
+# Parse response as JSON, exit if code is not equal 200
+def parse_response(response, check_code=True):
     parsed = json.loads(response)
-    if print_message:
-        print(parsed['message'])
+
+    if check_code and parsed['code'] != 200:
+        print("{code}: {message}".format(
+            code=parsed['code'], message=parsed['message']))
+        exit(0)
+
     return parsed
 
 
 #############################################
 # Classes
-
 class Method(Enum):  # Maybe more to be added later
     GET = auto()
     POST = auto()
