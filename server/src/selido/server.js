@@ -67,8 +67,9 @@ module.exports = class SelidoServer {
 
     setHandlers() {
         // Get some resources from db with id
-        app.get('/get/:id', async (req, res) => {
-            let answer = await this.db.get(req.params.id)
+        app.get('/get/', async (req, res) => {
+            let ids = req.body.ids
+            let answer = await this.db.get(ids)
 
             this.verbose_print_answer(answer)
             res.status(answer.code).send(answer)
@@ -94,26 +95,29 @@ module.exports = class SelidoServer {
         });
 
         // Delete a resource
-        app.delete('/resource/:id', async (req, res) => {
-            let answer = await this.db.delete(req.params.id)
+        app.delete('/resource/', async (req, res) => {
+            let ids = req.body.ids
+            let answer = await this.db.delete(ids)
 
             this.verbose_print_answer(answer)
             res.status(answer.code).send(answer)
         })
 
         // Tag resource
-        app.post('/tag/:id', async (req, res) => {
+        app.post('/tag/', async (req, res) => {
+            let ids = req.body.ids
             let tags = req.body.tags
-            let answer = await this.db.addTags(req.params.id, tags)
+            let answer = await this.db.addTags(ids, tags)
 
             this.verbose_print_answer(answer)
             res.status(answer.code).send(answer)
         })
 
         // Delete tag from resource
-        app.delete('/tag/:id', async (req, res) => {
+        app.delete('/tag/', async (req, res) => {
+            let ids = req.body.ids
             let tags = req.body.tags
-            let answer = await this.db.delTags(req.params.id, tags)
+            let answer = await this.db.delTags(ids, tags)
 
             this.verbose_print_answer(answer)
             res.status(answer.code).send(answer)

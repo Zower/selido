@@ -53,6 +53,7 @@ class TagPrinter:
     def print(self):
         if self.key_columns:
             self.print_with_columns()
+        # Print regular
         else:
             # This means there are more indexes than available space so indent some more
             if len(self.tags) > 10000:
@@ -78,9 +79,18 @@ class TagPrinter:
             self.oc.save()
 
     def print_with_columns(self):
+
+        # This means there are more indexes than available space so indent some more
+        if len(self.tags) > 10000:
+            i_space = ' ' * (len('1000') - 4)
+            print("Index", end=i_space)
+            t_space = ' '
+        # 5 spaces is enough
+        else:
+            t_space = ' ' * 5
+            print("Index", end=' ')
         if self.with_id:
-            space = ' ' * 24
-            print("Index ID", end=space)
+            print("ID", end=' ' * 24)
 
         for col in self.key_columns:
             if not self.print_too_long(col):
@@ -90,8 +100,8 @@ class TagPrinter:
 
         if len(self.tags) == 1:
             self.oc.push(self.tags[0].id)
-            print('0     ')
-            self.print_item(self.tags[0])
+            print('0', end='     ')
+            self.print_item_columned(self.tags[0])
         else:
             for i, item in enumerate(self.tags, 1):
                 self.oc.push(item.id)

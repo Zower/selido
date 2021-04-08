@@ -31,7 +31,10 @@ def delete(args):
 
     parsed_ids = helpers.parse_ids(args.searchterm)
 
-    r = send_request(args, Method.DELETE, '/resource/' + parsed_ids[0])
+    body = {}
+    body = add_to_body(body, 'ids', parsed_ids)
+
+    r = send_request(args, Method.DELETE, '/resource/', body)
 
     parsed = parse_response(r.text, True)
 
@@ -80,7 +83,10 @@ def get(args):
 
     parsed_ids = helpers.parse_ids(args.searchterm)
 
-    r = send_request(args, Method.GET, '/get/' + parsed_ids[0])
+    body = {}
+    body = add_to_body(body, 'ids', parsed_ids)
+
+    r = send_request(args, Method.GET, '/get/', body)
 
     parsed = parse_response(r.text)
     items = tag.items_from_list_of_dict(parsed['objects'])
@@ -111,12 +117,13 @@ def open_file(args):
 def add_tags(args):
     args = helpers.check_defaults(args)
 
-    body = {}
-    body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
-
     parsed_ids = helpers.parse_ids(args.searchterm)
 
-    r = send_request(args, Method.POST, '/tag/' + parsed_ids[0], body)
+    body = {}
+    body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
+    body = add_to_body(body, 'ids', parsed_ids)
+
+    r = send_request(args, Method.POST, '/tag/', body)
 
     parse_response(r.text, True)
 
@@ -124,12 +131,13 @@ def add_tags(args):
 def del_tags(args):
     args = helpers.check_defaults(args)
 
-    body = {}
-    body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
-
     parsed_ids = helpers.parse_ids(args.searchterm)
 
-    r = send_request(args, Method.DELETE, '/tag/' + parsed_ids[0], body)
+    body = {}
+    body = add_to_body(body, 'tags', make_tags(split_tags(args.tags)))
+    body = add_to_body(body, 'ids', parsed_ids)
+
+    r = send_request(args, Method.DELETE, '/tag/', body)
 
     parse_response(r.text, True)
 
@@ -143,14 +151,16 @@ def send_request(args, method, url, body=None):  # Mother send command
     s.cert = args.cert
     url = args.url + url
     try:
-        if method == Method.GET:
+        if method == Method.GET and body:
+            r = s.get(url, json=body)
+        elif method == Method.GET:
             r = s.get(url)
         elif method == Method.POST and body:
             r = s.post(url, json=body)
-        elif method == Method.DELETE and not body:
-            r = s.delete(url)
         elif method == Method.DELETE and body:
             r = s.delete(url, json=body)
+        elif method == Method.DELETE:
+            r = s.delete(url)
     except requests.ConnectionError as e:
         # TODO: Check for more types of error and print appropriate message
         print("Something went wrong connecting to selido:")
@@ -186,13 +196,15 @@ def add_to_body(body, name, item):  # Returns the body with the new item appende
 
 
 # Parse response as JSON, exit if code is not equal 200
-def parse_response(response, check_code=True):
+def parse_response(response, print_message=False, check_code=True):
     parsed = json.loads(response)
 
     if check_code and parsed['code'] != 200:
         print("{code}: {message}".format(
             code=parsed['code'], message=parsed['message']))
         exit(0)
+    elif print_message:
+        print(parsed['message'])
 
     return parsed
 

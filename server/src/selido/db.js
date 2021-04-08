@@ -101,27 +101,19 @@ module.exports = class SelidoDB {
     }
 
     // Requests
-    async get(id) {
+    async get(ids) {
         const action = 'get'
         // Found this on stackoverflow, im sure its perfect (check correct syntax for id)
         try {
-            if (id.match(/^[0-9a-fA-F]{24}$/)) {
-                let resources = await Resource.find(
-                    { "_id": id }
-                ).exec()
+            let valid_ids = findValidIds(ids)
+            let resources = await Resource.find(
+                { "_id": { $in: valid_ids } }
+            ).exec()
 
-                if (resources.length == 0) {
-                    return new SelidoResponse(action, failed, 'No resources with that id', 404, prettyId(id))
-                }
-                else if (resources.length > 1) {
-                    return new SelidoResponse(action, failed, 'More than one resource with same id, this is unexpected behavior, try deleting the item', 400, prettyId(id))
-                }
-                var resource = resources[0]
-                return new SelidoResponse(action, success, 'Got resource', 200, prettyConvert(resource))
+            if (resources.length == 0) {
+                return new SelidoResponse(action, failed, 'No resources with those id(s)', 404)
             }
-            else {
-                return new SelidoResponse(action, failed, 'Invalid id', 400)
-            }
+            return new SelidoResponse(action, success, 'Got resource(s)', 200, prettyConvert(resources, true))
         }
 
         catch (e) {
@@ -146,21 +138,17 @@ module.exports = class SelidoDB {
         }
     }
 
-    async delete(id) {
+    async delete(ids) {
         const action = 'delete'
 
         try {
-            if (id.match(/^[0-9a-fA-F]{24}$/)) {
-                let answer = await Resource.deleteOne({ "_id": id })
-                if (answer.deletedCount > 0) {
-                    return new SelidoResponse(action, success, 'Deleted resource', 200)
-                }
-                else {
-                    return new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id))
-                }
+            let valid_ids = findValidIds(ids)
+            let answer = await Resource.deleteMany({ "_id": { $in: valid_ids } })
+            if (answer.deletedCount > 0) {
+                return new SelidoResponse(action, success, 'Deleted resource(s)', 200)
             }
             else {
-                return new SelidoResponse(action, failed, 'Invalid id', 400)
+                return new SelidoResponse(action, failed, 'No resource with those id(s)', 404)
             }
         }
         catch (e) {
@@ -169,32 +157,22 @@ module.exports = class SelidoDB {
         }
     }
 
-    async addTags(id, tags) {
+    async addTags(ids, tags) {
         const action = 'tag'
 
+        if (!(typeof tags !== 'undefined')) {
+            return new SelidoResponse(action, failed, 'Undefined parameters sent', 400)
+        }
+
         try {
-            if (id.match(/^[0-9a-fA-F]{24}$/)) {
-                let resources = await Resource.find({ "_id": id }).exec()
-                if (resources.length == 0) {
-                    return new SelidoResponse(action, failed, 'No resources with that id', 404, prettyId(id))
-                }
-                else if (resources.length > 1) {
-                    return new SelidoResponse(action, failed, 'More than one resource with same id', 404, prettyId(id))
-                }
-                var resource = resources[0]
 
-                // Add tags to element
-                tags.forEach(tag => {
-                    resource.tags.push(tag)
-                })
+            let valid_ids = findValidIds(ids)
+            let resources = await Resource.updateMany({ "_id": { $in: valid_ids } }, { $push: { tags } }).exec()
+            if (resources.n == 0) {
+                return new SelidoResponse(action, failed, 'No resources with those id(s)', 404)
+            }
 
-                // Save to database
-                resource = await resource.save()
-                return new SelidoResponse(action, success, 'Tagged resource', 200, prettyConvert(resource))
-            }
-            else {
-                return new SelidoResponse(action, failed, 'Invalid id', 400)
-            }
+            return new SelidoResponse(action, success, 'Tagged resources', 200)
         }
         catch (e) {
             this.error(e)
@@ -202,7 +180,7 @@ module.exports = class SelidoDB {
         }
     }
 
-    async delTags(id, tags) {
+    async delTags(ids, tags) {
         const action = 'delTags'
 
         if (!(typeof tags !== 'undefined')) {
@@ -210,31 +188,16 @@ module.exports = class SelidoDB {
         }
 
         try {
-            if (id.match(/^[0-9a-fA-F]{24}$/)) {
-                let resources = await Resource.find({ "_id": id }).exec()
-                if (resources.length == 0) {
-                    return new SelidoResponse(action, failed, 'No resource with that id', 404, prettyId(id))
-                }
-                else if (resources.length > 1) {
-                    return new SelidoResponse(action, failed, 'More than one resource with same id', 404, prettyId(id))
-                }
-
-
-                var resource = resources[0]
-
-                // Delete tags from element
-                tags.forEach(tag => {
-                    resource.tags = resource.tags.filter(function (tag_check) {
-                        return !(tag_check.key === tag.key && tag_check.value === tag.value)
-                    })
-                })
-
-                resource = await resource.save()
-                return new SelidoResponse(action, success, 'Deleted tags from resource', 200, prettyConvert(resource))
+            let valid_ids = findValidIds(ids)
+            let resources = await Resource.updateMany({ "_id": { $in: valid_ids } }, { $pullAll: { tags } }).exec()
+            if (resources.n == 0) {
+                return new SelidoResponse(action, failed, 'No resources with those id(s)', 404)
             }
-            else {
-                return new SelidoResponse(action, failed, 'Invalid id', 400)
+            else if (resources.nModified == 0) {
+                return new SelidoResponse(action, failed, 'No resources with those ids have the specified tags', 400)
             }
+
+            return new SelidoResponse(action, success, 'Deleted tags from resource(s)', 200)
         }
 
         catch (e) {
@@ -366,6 +329,16 @@ module.exports = class SelidoDB {
         }
     }
 
+}
+
+function findValidIds(ids) {
+    let valid_ids = []
+    ids.forEach(id => {
+        if (id.match(/^[0-9a-fA-F]{24}$/)) {
+            valid_ids.push(id)
+        }
+    })
+    return valid_ids
 }
 
 function prettyConvert(object, multiple = false) {
