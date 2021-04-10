@@ -3,6 +3,7 @@ import hashlib
 
 import config
 import option
+import core
 
 from pathlib import Path
 
@@ -134,3 +135,41 @@ def print_sha3_hex_hash(string):
 
     print("Hash is:")
     print(s.hexdigest())
+
+
+def items_from_list_of_dict(dict_list, keys_to_ignore=[], sort=False):
+    items = []
+    for item in dict_list:
+        tags = []
+        for tag in item['tags']:
+            if not tag['key'] in keys_to_ignore:
+                if 'value' in tag:
+                    tags.append(core.Tag(tag['key'], tag['value']))
+                else:
+                    tags.append(core.Tag(tag['key']))
+        items.append(core.Item(item['id'], tags))
+        if sort:
+            # Forcing sort to use string representation of tag
+            tags.sort(key=lambda x: str(x))
+    return items
+
+
+def split_tags(tags):
+    if tags:
+        copy = tags.split(',')
+    return copy
+
+
+def make_tags(tags):  # Make tags into json
+    tags_list = []
+    for tag in tags:
+        tag = tag.split(':', 1)
+
+        if len(tag) == 1:
+            tags_list.append({'key': tag[0]})
+        else:
+            if tag[1] != '':
+                tags_list.append({'key': tag[0], 'value': tag[1]})
+            else:
+                tags_list.append({'key': tag[0]})
+    return tags_list
