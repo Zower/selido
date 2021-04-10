@@ -18,12 +18,11 @@ def add(args):
     args = helpers.check_defaults(args)
 
     b = core.Body()
-
     b.add('tags', helpers.make_tags(helpers.split_tags(args.tags)))
 
     r = send_request(args, Method.POST, '/resource/', b.get())
 
-    parsed = parse_response(r.text, True)
+    parse_response(r.text, True)
 
 
 def delete(args):
@@ -32,12 +31,11 @@ def delete(args):
     parsed_ids = helpers.parse_ids(args.searchterm)
 
     b = core.Body()
-
     b.add('ids', parsed_ids)
 
     r = send_request(args, Method.DELETE, '/resource/', b.get())
 
-    parsed = parse_response(r.text, True)
+    parse_response(r.text, True)
 
 
 def find(args):
@@ -75,7 +73,7 @@ def find(args):
     if args.columns:
         columns = args.columns.split(",")
 
-    printer = helpers.TagPrinter(
+    printer = core.TagPrinter(
         items, with_id=not args.no_id, key_columns=columns)
     printer.print()
 

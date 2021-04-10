@@ -75,7 +75,7 @@ def check_ca_cert(args):
 def parse_ids(search_term):  # Parses multiple ids, also checks cache if its just a basic number
     ids = []
     values = search_term.split(',')
-    oc = option.Option()
+    oc = core.Option()
 
     for value in values:
         # Regular id
