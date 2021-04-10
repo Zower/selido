@@ -2,7 +2,6 @@ import re
 import hashlib
 
 import config
-import option
 import core
 
 from pathlib import Path
