@@ -3,7 +3,6 @@ import requests
 import commands
 import helpers
 import config
-import option
 
 from threading import Timer
 
