@@ -2,7 +2,7 @@ import argparse
 import commands
 import auth
 import config
-
+import sys
 parser = argparse.ArgumentParser(
     prog='Selido client',
     description='Client to interact with selido server',
@@ -139,6 +139,9 @@ parser_find.add_argument(
     '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path")
 parser_find.add_argument(
     '-C', '--ca-file', help="Full path of the CA.crt file to use"
+)
+parser_find.add_argument(
+    '-i', '--indent', help="# Indents between tag columns"
 )
 
 parser_find.set_defaults(func=commands.find)

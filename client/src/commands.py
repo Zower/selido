@@ -73,8 +73,13 @@ def find(args):
     if args.columns:
         columns = args.columns.split(",")
 
-    printer = core.TagPrinter(
-        items, with_id=not args.no_id, key_columns=columns)
+    if not args.indent:
+        printer = core.TagPrinter(
+            items, with_id=not args.no_id, key_columns=columns)
+
+    else:
+        printer = core.TagPrinter(
+            items, with_id=not args.no_id, key_columns=columns, indent_tags=int(args.indent))
     printer.print()
 
 
