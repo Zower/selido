@@ -2,7 +2,7 @@ import argparse
 import commands
 import auth
 import config
-import sys
+
 parser = argparse.ArgumentParser(
     prog='Selido client',
     description='Client to interact with selido server',
