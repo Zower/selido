@@ -23,7 +23,7 @@ class Tag:
 
 class TagPrinter:
     # Tags should be a list of items, with each list being one set of tags
-    def __init__(self, tags, indent_tags=15, space_between_tags=3, with_id=True, key_columns=None):
+    def __init__(self, tags, indent_tags=15, space_between_tags=3, with_id=True, key_columns=None, count=False):
         self.tags = tags
         self.indent_tags = indent_tags
         if space_between_tags >= 3:
@@ -33,6 +33,7 @@ class TagPrinter:
         self.with_id = with_id
         self.key_columns = key_columns
         self.oc = Option()
+        self.count = count
 
     def print(self):
         if self.key_columns:
@@ -61,7 +62,9 @@ class TagPrinter:
                     print(i, end=t_space)
                     self.print_item(item)
             self.oc.save()
-
+        if self.count: 
+            print("# of results: {}".format(len(self.tags)))
+    
     def print_with_columns(self):
 
         # This means there are more indexes than available space so indent some more

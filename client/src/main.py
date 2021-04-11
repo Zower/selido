@@ -131,7 +131,7 @@ parser_find.add_argument(
     '-N', '--no-id', help="Dont include the IDs of the resource in output", action='store_true'
 )
 parser_find.add_argument(
-    '--count', help="Count the number of instances returned, instead of outputting them", action='store_true'
+    '--count', help="Count the number of instances returned", action='store_true'
 )
 parser_find.add_argument(
     '-u', '--url', help="URL:port to connect to")
