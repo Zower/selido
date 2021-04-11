@@ -2,6 +2,8 @@ client/main.build
 client/main.dist
 client/src/__pycache__
 client/certs/
+client/python37.dll
+*.exe
 server/node_modules
 server/error.log
 server/certs
