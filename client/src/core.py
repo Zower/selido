@@ -127,41 +127,55 @@ class TagPrinter:
             item_function(item)
 
     def _print_item(self, item):
+        # Print ID
         if not self.print_only_tags:
             space = ' ' * 2
             print(item.id, end=space)
+
         for i, tag in enumerate(item.tags):
             if not self.print_too_long(tag):
+                # Calculate necessary space for tag
                 space = self.space(tag)
+                # Print the tag
                 print(tag, end='')
                 if not i == len(item.tags) - 1:
                     print(space, end='')
+
+        # New line
         print()
 
     def _print_item_columned(self, item):
-        # Print columned tags, then rest
+        # Print ID
         if not self.print_only_tags:
             space = ' ' * 2
             print(item.id, end=space)
+
+        # Print columned values first
         for column in self.key_columns:
             printed = False
             for tag in item.tags:
+                # If the key matches a column
                 if tag.key == column:
                     printed = True
+                    # Print the value
                     if tag.value:
                         if not self.print_too_long(tag.value):
                             space = self.space(tag.value)
                             print(tag.value, end=space)
+                    # If no value, print <> to indicate that the key is there
                     else:
                         space = self.space("<>")
                         print("<>", end=space)
+            # The item does not have the specified key, print -
             if not printed:
                 print('-' + ' ' * (self.indentation_level - 1), end='')
-        for i, tag in enumerate(item.tags):
+
+        # Print rest of the tags
+        for tag in item.tags:
             if tag.key not in self.key_columns:
-                print(tag, end='')
-                if not i == len(item.tags) - 1:
-                    print(',', end='')
+                space = self.space(tag)
+                print(tag, end=space)
+        # New line
         print()
 
     # Calculate necessary space for a given string
