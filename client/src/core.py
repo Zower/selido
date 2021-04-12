@@ -29,10 +29,11 @@ class TagPrinter:
     key_columns: List[str]  # Keys that will have their own columns
     indentation_level: int  # Indentation level between tags
     space_between_tags: int  # Minimum space between tags
-    print_only_tags: bool   # Only print tags, no columns, indices, ids, or anything else. key_columns still get printed for each item, but there is no top level identifier showing what the column was
+    no_columns: bool   # Only print tags, no columns, indices, ids, or anything else. key_columns still get printed for each item, but there is no top level identifier showing what the column was
+    with_id: bool  # Print IDs
     count: bool  # Whether to print amount of items
 
-    def __init__(self, resources, key_columns=None, indentation_level=15, space_between_tags=3, print_only_tags=False, count=False):
+    def __init__(self, resources, key_columns=None, indentation_level=15, space_between_tags=3, no_columns=False, with_id=False, count=False):
         self.resources = resources
         self.key_columns = key_columns
         self.indentation_level = indentation_level
@@ -40,7 +41,8 @@ class TagPrinter:
             self.space_between_tags = space_between_tags
         else:
             self.space_between_tags = 3
-        self.print_only_tags = print_only_tags
+        self.no_columns = no_columns
+        self.with_id = with_id
         self.count = count
 
         self.oc = Option()
@@ -60,7 +62,7 @@ class TagPrinter:
 
     def _print_columns(self, max_index_length):
         # Columns should be printed
-        if not self.print_only_tags:
+        if not self.no_columns:
 
             # If the max is less than length of the word 'index', then just one space is needed
             if max_index_length <= 5:
@@ -70,7 +72,10 @@ class TagPrinter:
                 index_space = ' ' * (max_index_length - 4)
 
             # Printed whether columned or not
-            print("Index", "ID", sep=index_space, end=' ' * 24)
+            print("Index", end=index_space)
+
+            if self.with_id:
+                print("ID", end=' ' * 24)
 
             # No key columns
             if not self.key_columns:
@@ -94,8 +99,8 @@ class TagPrinter:
         if len(self.resources) == 1:
             # Push the id to OC, so it can be saved later
             self.oc.push(self.resources[0].id)
-            if not self.print_only_tags:
-                print('0', end=' ' * 5)
+            # Print index
+            print('0', end=' ' * 5)
 
             # Call _print_item or _print_item_columned
             item_function(self.resources[0])
@@ -111,24 +116,24 @@ class TagPrinter:
         for i, item in enumerate(self.resources, 1):
             # Push the id to OC, so it can be saved later
             self.oc.push(item.id)
-            if not self.print_only_tags:
-                # Length of string of index
-                tag_length = len(str(i))
-                # Check if extra spaces must be added, or not
-                if tag_length <= 5:
-                    tag_space = ' ' * (6 - tag_length)
-                else:
-                    tag_space = ' ' * (max_index_length - tag_length + 1)
 
-                # Print index
-                print(i, end=tag_space)
+            # Length of string of index
+            tag_length = len(str(i))
+            # Check if extra spaces must be added, or not
+            if tag_length <= 5:
+                tag_space = ' ' * (6 - tag_length)
+            else:
+                tag_space = ' ' * (max_index_length - tag_length + 1)
+
+            # Print index
+            print(i, end=tag_space)
 
             # Call _print_item or _print_item_columned
             item_function(item)
 
     def _print_item(self, item):
         # Print ID
-        if not self.print_only_tags:
+        if self.with_id:
             space = ' ' * 2
             print(item.id, end=space)
 
@@ -146,7 +151,7 @@ class TagPrinter:
 
     def _print_item_columned(self, item):
         # Print ID
-        if not self.print_only_tags:
+        if self.with_id:
             space = ' ' * 2
             print(item.id, end=space)
 

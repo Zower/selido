@@ -137,6 +137,8 @@ parser_find.add_argument(
     '--mcount', help="Count the number of instances returned, nothing is printed", action='store_true'
 )
 parser_find.add_argument(
+    '-w', '--with-id', help="Print IDs of the resources", action='store_true')
+parser_find.add_argument(
     '-u', '--url', help="URL:port to connect to")
 parser_find.add_argument(
     '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path")
@@ -188,7 +190,7 @@ parser_tag_del.add_argument(
 parser_tag_del.set_defaults(func=commands.del_tags)
 
 parser_tag_copy = parser_tag_sub.add_parser(
-    'copy', aliases=['c'], help='Copy tags from one set of resources toa nother')
+    'copy', aliases=['c'], help='Copy tags from one set of resources to another')
 parser_tag_copy.add_argument(
     'from_ids', help='The ids to copy tags from, in comma-separated format. Also accepts previously cached indices.')
 parser_tag_copy.add_argument(
