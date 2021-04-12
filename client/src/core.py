@@ -178,8 +178,9 @@ class TagPrinter:
         # Print rest of the tags
         for tag in item.tags:
             if tag.key not in self.key_columns:
-                space = self.space(tag)
-                print(tag, end=space)
+                if not self.print_too_long(tag.value):
+                    space = self.space(tag)
+                    print(tag, end=space)
         # New line
         print()
 
