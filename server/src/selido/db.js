@@ -20,61 +20,65 @@ module.exports = class SelidoDB {
 
     // Startup
     async init() {
-        if (this.use_password) {
-            try {
-                let auth_file = fs.readFileSync(process.cwd() + '/db_auth.txt')
-                // This replace is probably unwise :P
-                let auth_array = auth_file.toString().replace(/\r/g, "").split('\n')
-                if (auth_array.length == 2) {
-                    let message = await this.connectWithAuth(auth_array[0], auth_array[1])
-                    return message
+        return new Promise(async (resolve, reject) => {
+            if (this.use_password) {
+                try {
+                    let auth_file = fs.readFileSync(process.cwd() + '/db_auth.txt')
+                    // This replace is probably unwise :P
+                    let auth_array = auth_file.toString().replace(/\r/g, "").split('\n')
+                    if (auth_array.length == 2) {
+                        let message = await this.connectWithAuth(auth_array[0], auth_array[1])
+                        resolve(message)
+                    }
+                    else {
+                        console.log("db_auth.txt is wrongly formatted, make sure it's username on one line, password on the second")
+                        process.exit(1)
+                    }
                 }
-                else {
-                    console.log("db_auth.txt is wrongly formatted, make sure it's username on one line, password on the second")
-                    process.exit(1)
-                }
-            }
-            catch (err) {
-                if (err.code == 'ENOENT') {
-                    var rl = readline.createInterface({
-                        input: process.stdin,
-                        output: process.stdout
-                    });
-                    rl.question("No db_auth.txt file present.\nProvide the accountname/password used when creating the database\nName: ", user => {
-                        rl.question("Password: ", pass => {
-                            rl.close()
-                            let auth = user + "\n" + pass
-                            fs.writeFileSync(process.cwd() + '/db_auth.txt', auth)
-                            return this.connectWithAuth(user, pass)
+                catch (err) {
+                    if (err.code == 'ENOENT') {
+                        var rl = readline.createInterface({
+                            input: process.stdin,
+                            output: process.stdout
+                        });
+                        rl.question("No db_auth.txt file present.\nProvide the accountname/password used when creating the database\nName: ", user => {
+                            rl.question("Password: ", async pass => {
+                                rl.close()
+                                let auth = user + "\n" + pass
+                                fs.writeFileSync(process.cwd() + '/db_auth.txt', auth)
+                                let message = await this.connectWithAuth(user, pass)
+                                resolve(message)
+                            })
                         })
-                    })
-                }
-                else {
-                    this.error("Failed to connect to database with a password, check that db_auth.txt is correct. Error:")
-                    this.error(e)
-                    process.exit(1)
+                    }
+                    else {
+                        this.error("Failed to connect to database with a password, check that db_auth.txt is correct. Error:")
+                        this.error(e)
+                        process.exit(1)
+                    }
                 }
             }
-        }
-        else {
-            // No password connect
-            await mongoose.connect('mongodb://' + this.host + '/selido', { useNewUrlParser: true, useUnifiedTopology: true })
-                .catch(err => {
-                    this.info('Failed to connect to mongodb, is mongod started and running on ' + 'mongodb://' + this.host + '/selido' + ' and username/password correct? You can specify location with -d (e.g. -d localhost)')
+            else {
+                // No password connect
+                await mongoose.connect('mongodb://' + this.host + '/selido', { useNewUrlParser: true, useUnifiedTopology: true })
+                    .catch(err => {
+                        this.info('Failed to connect to mongodb, is mongod started and running on ' + 'mongodb://' + this.host + '/selido' + ' and username/password correct? You can specify location with -d (e.g. -d localhost)')
+                        this.error(err)
+                        process.exit(1)
+                    });
+
+                this.db = mongoose.connection;
+
+                this.db.on('error', err => {
                     this.error(err)
                     process.exit(1)
-                });
+                })
 
-            this.db = mongoose.connection;
+                resolve('Connected to db!')
 
-            this.db.on('error', err => {
-                this.error(err)
-                process.exit(1)
-            })
+            }
 
-            return 'Connected to db!'
-
-        }
+        })
     }
 
     async connectWithAuth(user, pass) {

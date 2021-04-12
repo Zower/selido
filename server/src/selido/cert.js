@@ -15,8 +15,13 @@ module.exports = class SelidoCert {
     }
 
     checkOptions() {
-        if (fs.existsSync(this.path + 'ca.crt') && fs.existsSync(this.path + 'server.crt') && fs.existsSync(this.path + 'server.key')) {
-            return true
+        if (fs.existsSync(this.path)) {
+            if (fs.existsSync(this.path + 'ca.crt') && fs.existsSync(this.path + 'server.crt') && fs.existsSync(this.path + 'server.key')) {
+                return true
+            }
+        }
+        else {
+            fs.mkdirSync(this.path)
         }
         return false
     }

@@ -37,7 +37,7 @@ module.exports = class SelidoServer {
         try {
             let options = await this.auth.getOrGenerateMainOptions()
             this.verbose("Attempting to connect to db..")
-            let message = await this.connectToDB()
+            let message = await this.db.init()
             this.info(message)
 
             this.setHandlers()
@@ -59,10 +59,6 @@ module.exports = class SelidoServer {
             this.error(e)
             process.exit(1)
         }
-    }
-
-    async connectToDB() {
-        return this.db.init()
     }
 
     setHandlers() {

@@ -47,7 +47,6 @@ module.exports = class SelidoAuth {
             this.error(e)
             process.exit(1)
         }
-
     }
 
     async getOrGenerateMainOptions() {
