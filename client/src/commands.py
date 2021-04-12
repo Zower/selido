@@ -105,7 +105,11 @@ def open_file(args):
 
     parsed_ids = helpers.parse_ids(args.searchterm)
 
-    r = send_request(args, Method.GET, '/get/' + parsed_ids[0])
+    b = core.Body()
+    parsed_ids = [parsed_ids[0]]
+    b.add('ids', parsed_ids)
+
+    r = send_request(args, Method.GET, '/get/', b.get())
 
     parsed = parse_response(r.text)
     item = helpers.items_from_list_of_dict(parsed['objects'])[0]
