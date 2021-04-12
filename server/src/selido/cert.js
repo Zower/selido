@@ -60,7 +60,7 @@ module.exports = class SelidoCert {
                         output: process.stdout
                     });
 
-                    rl.question("Performing first time setup. If this is a mistake, abort and check your certificates.') Continue? (y/n): ", cont => {
+                    rl.question("Performing first time setup. If this is a mistake, abort and check your certificates. Continue? (y/n): ", cont => {
                         if (cont === 'y') {
                             rl.question("Provide comma separated DNS names for your server, e.g. example.com, www.example.com. If running locally type localhost: ", dns => {
                                 rl.question("Provide comma separated IPs for your server, e.g. 203.0.113.254, 198.51.100.3. If running locally type 127.0.0.1: ", ips => {

@@ -34,7 +34,7 @@ module.exports = class SelidoDB {
                     process.exit(1)
                 }
             }
-            catch (e) {
+            catch (err) {
                 if (err.code == 'ENOENT') {
                     var rl = readline.createInterface({
                         input: process.stdin,
