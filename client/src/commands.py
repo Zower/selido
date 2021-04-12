@@ -151,6 +151,21 @@ def del_tags(args):
     parse_response(r.text, True)
 
 
+def copy_tags(args):
+    args = helpers.check_defaults(args)
+
+    from_ids = helpers.parse_ids(args.from_ids)
+    to_ids = helpers.parse_ids(args.to_ids)
+
+    b = core.Body()
+    b.add('from', from_ids)
+    b.add('to', to_ids)
+
+    r = send_request(args, Method.PATCH, '/tag/', b.get())
+
+    parse_response(r.text, True)
+
+
 #############################################
 # Helpers
 
@@ -170,6 +185,8 @@ def send_request(args, method, url, body=None):  # Mother send command
             r = s.delete(url, json=body)
         elif method == Method.DELETE:
             r = s.delete(url)
+        elif method == Method.PATCH and body:
+            r = s.patch(url, json=body)
     except requests.ConnectionError as e:
         # TODO: Check for more types of error and print appropriate message
         print("Something went wrong connecting to selido:")
@@ -199,3 +216,4 @@ class Method(Enum):  # Maybe more to be added later
     GET = auto()
     POST = auto()
     DELETE = auto()
+    PATCH = auto()

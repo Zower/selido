@@ -119,6 +119,15 @@ module.exports = class SelidoServer {
             res.status(answer.code).send(answer)
         })
 
+        app.patch('/tag/', async (req, res) => {
+            let fromIds = req.body.from
+            let toIds = req.body.to
+            let answer = await this.db.copyTags(fromIds, toIds)
+
+            this.verbose_print_answer(answer)
+            res.status(answer.code).send(answer)
+        })
+
         this.setAuxHandlers()
     }
 

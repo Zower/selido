@@ -109,9 +109,9 @@ module.exports = class SelidoDB {
         const action = 'get'
         // Found this on stackoverflow, im sure its perfect (check correct syntax for id)
         try {
-            let valid_ids = findValidIds(ids)
+            let validIds = findValidIds(ids)
             let resources = await Resource.find(
-                { "_id": { $in: valid_ids } }
+                { "_id": { $in: validIds } }
             ).exec()
 
             if (resources.length == 0) {
@@ -146,8 +146,8 @@ module.exports = class SelidoDB {
         const action = 'delete'
 
         try {
-            let valid_ids = findValidIds(ids)
-            let answer = await Resource.deleteMany({ "_id": { $in: valid_ids } })
+            let validIds = findValidIds(ids)
+            let answer = await Resource.deleteMany({ "_id": { $in: validIds } })
             if (answer.deletedCount > 0) {
                 return new SelidoResponse(action, success, 'Deleted resource(s)', 200)
             }
@@ -164,14 +164,14 @@ module.exports = class SelidoDB {
     async addTags(ids, tags) {
         const action = 'tag'
 
-        if (!(typeof tags !== 'undefined')) {
+        if (typeof tags == 'undefined') {
             return new SelidoResponse(action, failed, 'Undefined parameters sent', 400)
         }
 
         try {
 
-            let valid_ids = findValidIds(ids)
-            let resources = await Resource.updateMany({ "_id": { $in: valid_ids } }, { $push: { tags } }).exec()
+            let validIds = findValidIds(ids)
+            let resources = await Resource.updateMany({ "_id": { $in: validIds } }, { $push: { tags } }).exec()
             if (resources.n == 0) {
                 return new SelidoResponse(action, failed, 'No resources with those id(s)', 404)
             }
@@ -187,13 +187,13 @@ module.exports = class SelidoDB {
     async delTags(ids, tags) {
         const action = 'delTags'
 
-        if (!(typeof tags !== 'undefined')) {
+        if (typeof tags == 'undefined') {
             return new SelidoResponse(action, failed, 'Undefined parameters sent', 400)
         }
 
         try {
-            let valid_ids = findValidIds(ids)
-            let resources = await Resource.updateMany({ "_id": { $in: valid_ids } }, { $pullAll: { tags } }).exec()
+            let validIds = findValidIds(ids)
+            let resources = await Resource.updateMany({ "_id": { $in: validIds } }, { $pullAll: { tags } }).exec()
             if (resources.n == 0) {
                 return new SelidoResponse(action, failed, 'No resources with those id(s)', 404)
             }
@@ -204,6 +204,45 @@ module.exports = class SelidoDB {
             return new SelidoResponse(action, success, 'Deleted tags from resource(s)', 200)
         }
 
+        catch (e) {
+            this.error(e)
+            return new SelidoResponse(action, failed, 'Internal error. Check server logs.', 500)
+        }
+    }
+
+    async copyTags(fromIds, toIds) {
+        const action = 'copyTags'
+
+        if (typeof fromIds == 'undefined' || typeof toIds == 'undefined') {
+            return new SelidoResponse(action, failed, 'Undefined parameters sent', 400)
+        }
+
+        try {
+            let validFromIds = findValidIds(fromIds)
+            let validToIds = findValidIds(toIds)
+
+            let resources = await Resource.find(
+                { "_id": { $in: validFromIds } }
+            ).exec()
+
+            let tags = []
+            resources.forEach(resource => {
+                resource.tags.forEach(tag => {
+                    tags.push(tag)
+                })
+            })
+
+            resources = await Resource.updateMany({ "_id": { $in: validToIds } }, { $push: { tags } }).exec()
+
+            if (resources.n == 0) {
+                return new SelidoResponse(action, failed, 'No resources with those id(s)', 404)
+            }
+            else if (resources.nModified == 0) {
+                return new SelidoResponse(action, failed, 'No resources were changed, possibly no tags present on fromIds', 400)
+            }
+
+            return new SelidoResponse(action, success, 'Copied tag(s)', 200)
+        }
         catch (e) {
             this.error(e)
             return new SelidoResponse(action, failed, 'Internal error. Check server logs.', 500)
@@ -336,13 +375,13 @@ module.exports = class SelidoDB {
 }
 
 function findValidIds(ids) {
-    let valid_ids = []
+    let validIds = []
     ids.forEach(id => {
         if (id.match(/^[0-9a-fA-F]{24}$/)) {
-            valid_ids.push(id)
+            validIds.push(id)
         }
     })
-    return valid_ids
+    return validIds
 }
 
 function prettyConvert(object, multiple = false) {
