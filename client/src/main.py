@@ -97,7 +97,7 @@ parser_get = subparsers.add_parser('get',
 parser_get.add_argument(
     'searchterm', help='The ids to get, in comma-separated format. Also accepts previously cached indices.')
 parser_get.add_argument(
-    '-N', '--no-id', help="Dont include the IDs of the resource in output", action='store_true'
+    '-N', '--no-columns', help="Dont print top level columns in output", action='store_true'
 )
 parser_get.add_argument(
     '-u', '--url', help="URL:port to connect to")
@@ -128,7 +128,7 @@ parser_find.add_argument(
 parser_find.add_argument(
     '-s', '--sort', help="Sort the tags of the resources based on keys", action='store_true')
 parser_find.add_argument(
-    '-N', '--no-id', help="Dont include the IDs of the resource in output", action='store_true'
+    '-N', '--no-columns', help="Dont print top level columns in output", action='store_true'
 )
 parser_find.add_argument(
     '--count', help="Count the number of instances returned", action='store_true'

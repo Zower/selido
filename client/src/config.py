@@ -15,7 +15,6 @@ def init(args):  # Should be more robust
     try:
         Path(config_location).mkdir(parents=True, exist_ok=True)
         Path(certs_location).mkdir(parents=True, exist_ok=True)
-        f = open(config_location / config_name, "x")
     except FileExistsError:
         print('Config file directory or certs directory already exists')
         exit(1)

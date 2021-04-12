@@ -1,10 +1,10 @@
 import requests
+from threading import Timer
 
+import core
 import commands
 import helpers
 import config
-
-from threading import Timer
 
 
 def request(args):
@@ -53,12 +53,12 @@ def request(args):
         print("-------------------------------------------------------------------")
         print("Waiting for verification from authenticated client....")
 
-        body = {}
+        b = core.Body()
         obj = {'name': args.name, 'code': parsed['objects']['code']}
-        body = commands.add_to_body(body, 'code', obj)
+        b.add('code', obj)
 
         Timer(0.5, authenticated_yet, [
-            args, body]).start()
+            args, b.get()]).start()
 
 
 def authenticated_yet(args, body):
@@ -101,15 +101,15 @@ def verify(args):
     r = commands.send_request(args, commands.Method.GET, '/authenticate/')
     parsed = commands.parse_response(r.text, False)
 
-    oc = option.Option(parsed['objects'])
+    oc = core.Option(parsed['objects'])
     send = oc.print_and_return_answer()
 
     print(send)
 
-    body = {}
-    body = commands.add_to_body(body, "code", send)
+    b = core.Body()
+    b.add('code', send)
 
     p = commands.send_request(
-        args, commands.Method.POST, '/authenticate/', body)
+        args, commands.Method.POST, '/authenticate/', b.get())
     parsed = commands.parse_response(p.text, False)
     print(parsed['message'])

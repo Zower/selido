@@ -1,18 +1,14 @@
 import json
 import config
 
-
-class Resource:
-    # Tags is a list of type Tag
-    def __init__(self, id, tags):
-        self.id = id
-        self.tags = tags
+from typing import List
+from dataclasses import dataclass, field
 
 
+@dataclass
 class Tag:
-    def __init__(self, key, value=None):
-        self.key = key
-        self.value = value
+    key: str
+    value: str = None
 
     def __str__(self):
         if self.value:
@@ -21,83 +17,117 @@ class Tag:
             return self.key
 
 
+@dataclass
+class Resource:
+    id: str  # ID as returned from the server
+    tags: List[Tag]  # Tags associated with this ID, a list of type "Tag"
+
+
+@dataclass
 class TagPrinter:
-    # Tags should be a list of items, with each list being one set of tags
-    def __init__(self, tags, indent_tags=15, space_between_tags=3, with_id=True, key_columns=None, count=False):
-        self.tags = tags
-        self.indent_tags = indent_tags
+    resources: List[Resource]  # The resources to print
+    key_columns: List[str]  # Keys that will have their own columns
+    indentation_level: int  # Indentation level between tags
+    space_between_tags: int  # Minimum space between tags
+    print_only_tags: bool   # Only print tags, no columns, indices, ids, or anything else. key_columns still get printed for each item, but there is no top level identifier showing what the column was
+    count: bool  # Whether to print amount of items
+
+    def __init__(self, resources, key_columns=None, indentation_level=15, space_between_tags=3, print_only_tags=False, count=False):
+        self.resources = resources
+        self.key_columns = key_columns
+        self.indentation_level = indentation_level
         if space_between_tags >= 3:
             self.space_between_tags = space_between_tags
         else:
             self.space_between_tags = 3
-        self.with_id = with_id
-        self.key_columns = key_columns
-        self.oc = Option()
+        self.print_only_tags = print_only_tags
         self.count = count
 
+        self.oc = Option()
+
     def print(self):
+
+        # Caculate length of string of the number of indices
+        max_index_length = len(str(len(self.resources)))
+
+        self._print_columns(max_index_length)
+
+        self._print_items(max_index_length)
+
+        # Count should be printed at the end
+        if self.count:
+            print("# of results: {}".format(len(self.resources)))
+
+    def _print_columns(self, max_index_length):
+        # Columns should be printed
+        if not self.print_only_tags:
+
+            # If the max is less than length of the word 'index', then just one space is needed
+            if max_index_length <= 5:
+                index_space = ' '
+            # Else, the space must be max_index_length minus 5 (for the word 'index'), plus one for spacing.
+            else:
+                index_space = ' ' * (max_index_length - 4)
+
+            # Printed whether columned or not
+            print("Index", "ID", sep=index_space, end=' ' * 24)
+
+            # No key columns
+            if not self.key_columns:
+                print("Tags")
+            # This is a custom column print, so print those
+            else:
+                for col in self.key_columns:
+                    if not self.print_too_long(col):
+                        space = self.space(col)
+                        print(col, end=space)
+                print("Other tags")
+
+    def _print_items(self, max_index_length):
+        # Set the print_item function to be used, to avoid multiple if checks for every item
         if self.key_columns:
-            self.print_with_columns()
-        # Print regular
+            item_function = self._print_item_columned
         else:
-            # This means there are more indexes than available space so indent some more
-            if len(self.tags) > 10000:
-                i_space = ' ' * (len('1000') - 4)
-                print("Index", end=i_space)
-                t_space = ' '
-            # 5 spaces is enough
-            else:
-                t_space = ' ' * 5
-                print("Index", end=' ')
-            if self.with_id:
-                print("ID", "Tags", sep=' ' * 24)
+            item_function = self._print_item
 
-            if len(self.tags) == 1:
-                self.oc.push(self.tags[0].id)
-                print('0', end='     ')
-                self.print_item(self.tags[0])
-            else:
-                for i, item in enumerate(self.tags, 1):
-                    self.oc.push(item.id)
-                    print(i, end=t_space)
-                    self.print_item(item)
-            self.oc.save()
-        if self.count: 
-            print("# of results: {}".format(len(self.tags)))
-    
-    def print_with_columns(self):
+        # Only one thing to print, therefore index should be 0
+        if len(self.resources) == 1:
+            # Push the id to OC, so it can be saved later
+            self.oc.push(self.resources[0].id)
+            if not self.print_only_tags:
+                print('0', end=' ' * 5)
 
-        # This means there are more indexes than available space so indent some more
-        if len(self.tags) > 10000:
-            i_space = ' ' * (len('1000') - 4)
-            print("Index", end=i_space)
-            t_space = ' '
-        # 5 spaces is enough
+            # Call _print_item or _print_item_columned
+            item_function(self.resources[0])
+
+        # More than 1 resource, print from index 1
         else:
-            t_space = ' ' * 5
-            print("Index", end=' ')
-        if self.with_id:
-            print("ID", end=' ' * 24)
+            self._print_multiple(item_function, max_index_length)
 
-        for col in self.key_columns:
-            if not self.print_too_long(col):
-                space = self.space(col)
-                print(col, end=space)
-        print("Other tags\n")
-
-        if len(self.tags) == 1:
-            self.oc.push(self.tags[0].id)
-            print('0', end='     ')
-            self.print_item_columned(self.tags[0])
-        else:
-            for i, item in enumerate(self.tags, 1):
-                self.oc.push(item.id)
-                print(i, end='     ')
-                self.print_item_columned(item)
+        # Save the options to file
         self.oc.save()
 
-    def print_item(self, item):
-        if self.with_id:
+    def _print_multiple(self, item_function, max_index_length):
+        for i, item in enumerate(self.resources, 1):
+            # Push the id to OC, so it can be saved later
+            self.oc.push(item.id)
+            if not self.print_only_tags:
+                # Length of string of index
+                tag_length = len(str(i))
+                # Check if extra spaces must be added, or not
+                if tag_length <= 5:
+                    tag_space = ' ' * (6 - tag_length)
+                else:
+                    tag_space = ' ' * (max_index_length - tag_length + 1)
+
+                # Print index
+                print(i, end=tag_space)
+
+            # Call _print_item or _print_item_columned
+            item_function(item)
+
+    def _print_item(self, item):
+        if not self.print_only_tags:
             space = ' ' * 2
             print(item.id, end=space)
         for i, tag in enumerate(item.tags):
@@ -108,9 +138,9 @@ class TagPrinter:
                     print(space, end='')
         print()
 
-    def print_item_columned(self, item):
+    def _print_item_columned(self, item):
         # Print columned tags, then rest
-        if self.with_id:
+        if not self.print_only_tags:
             space = ' ' * 2
             print(item.id, end=space)
         for column in self.key_columns:
@@ -126,7 +156,7 @@ class TagPrinter:
                         space = self.space("<>")
                         print("<>", end=space)
             if not printed:
-                print('-' + ' ' * (self.indent_tags - 1), end='')
+                print('-' + ' ' * (self.indentation_level - 1), end='')
         for i, tag in enumerate(item.tags):
             if tag.key not in self.key_columns:
                 print(tag, end='')
@@ -134,13 +164,15 @@ class TagPrinter:
                     print(',', end='')
         print()
 
+    # Calculate necessary space for a given string
     def space(self, string):
-        return ' ' * (self.indent_tags - len(str(string)))
+        return ' ' * (self.indentation_level - len(str(string)))
 
+    # Prints the string sliced if it is too long, otherwise returns false
     def print_too_long(self, tag):
-        if len(str(tag)) > self.indent_tags - self.space_between_tags:
+        if len(str(tag)) > self.indentation_level - self.space_between_tags:
             space = ' ' * (self.space_between_tags - 2)
-            print(str(tag)[0:self.indent_tags - self.space_between_tags] +
+            print(str(tag)[0:self.indentation_level - self.space_between_tags] +
                   '..' + space, end='')
             return True
         else:
@@ -148,41 +180,44 @@ class TagPrinter:
 
 
 # Options printing and saving
-
+@dataclass
 class Option:
-    # Options should be a list of possible options
-    def __init__(self, options=[], default=None):
-        self.options = options
-        self.default = default
+    options: List[str] = field(default_factory=list)
 
+    # Add an option
     def push(self, item):
         self.options.append(item)
 
+    # Remove an option
     def pop(self, index=None):
         if index:
             return self.options.pop(index)
         return self.options.pop()
 
+    # Saves all current options to cache.json in current config location.
     def save(self):
-        amount = len(self.options)
-        indexed_options = self._indexed_dict(self.options)
+        indexed_options = self._options_indexed_dict()
         try:
+            # Need to open in append mode as r+ will not create the file if it does not exist, a+ will.
             with open(config.config_location / 'cache.json', 'a+') as f:
+                # Seek to start of file, as append('a+') opens at the end.
                 f.seek(0)
                 old_raw = f.read()
                 try:
+                    # Load content into dict
                     old_options = json.loads(old_raw)
-                # Probably empty file
+                # File was probably empty
                 except json.JSONDecodeError as e:
-                    print(old_raw)
                     if len(old_raw) == 0:
+                        # Write cache straight to file
                         f.write(json.dumps(indexed_options))
                         f.close()
                         return
+                    # Something else went wrong instead
                     else:
                         raise e
 
-                # Overwrites anything in old that is also in self.options, but anything else is kept
+                # Overwrites anything in old that is also in new, but anything else is kept
                 new_options = dict(list(old_options.items()) +
                                    list(indexed_options.items()))
                 # Deletes old content
@@ -196,26 +231,16 @@ class Option:
             exit(1)
 
     def get(self):
-        try:
-            with open(config.config_location / 'cache.json', 'r') as f:
-                cached = json.loads(f.read())
-                f.close()
-                return cached
-        except OSError as e:
-            print(e)
-            exit(1)
+        cached = self._get_cached()
+        return cached
 
-    def find_cached(self, index):
-        try:
-            with open(config.config_location / 'cache.json', 'r') as f:
-                cached = json.loads(f.read())
-                return cached[str(index)]
-        except OSError as e:
-            print(e)
-            exit(1)
-    # Prints all items, then returns the item chosen
+    # Find the value(ID) stored at key
+    def find_cached(self, key):
+        cached = self._get_cached()
+        return cached[str(key)]
 
-    def print_and_return_answer(self, message=None):
+    # Prints all options, then returns the item chosen
+    def print_and_return_answer(self, message=None, default=None):
         amount = len(self.options)
         number = -1
         if amount > 0:
@@ -227,7 +252,7 @@ class Option:
 
             if not message:
                 message = "Choose one option"
-            if self.default:
+            if default:
                 message += " [" + default + "]"
             message += " (q to quit): "
 
@@ -236,7 +261,7 @@ class Option:
                     answer = input(message)
                     if answer == 'q':
                         exit(0)
-                    elif self.default and answer == "":
+                    elif default and answer == "":
                         number = default
                         break
                     else:
@@ -251,23 +276,35 @@ class Option:
                 except ValueError:
                     print('Please type a number')
                     continue
-        if not number == -1:
-            return self.options[number]
+            if not number == -1:
+                return self.options[number]
 
-    def _indexed_dict(self, array):
+    # Makes an dictionary with an index as a key, e.g. {"1":bar, "0": foo}, or in the case of IDs: {"0": "606ee90d1bbc7f0adad1ef19", "1": "606ee9231bbc7f0adad1ef1a"}
+    def _options_indexed_dict(self):
         indexed_dict = {}
-        if len(array) == 1:
-            indexed_dict['0'] = array[0]
+        if len(self.options) == 1:
+            indexed_dict['0'] = self.options[0]
         else:
-            for i, item in enumerate(array, 1):
+            for i, item in enumerate(self.options, 1):
                 indexed_dict[str(i)] = item
                 self.top_index = i
         return indexed_dict
 
+    # Opens cache.json and returns the contents as given by json.loads()
+    def _get_cached(self):
+        try:
+            with open(config.config_location / 'cache.json', 'r') as f:
+                cached = json.loads(f.read())
+                f.close()
+                return cached
+        except OSError as e:
+            print(e)
+            exit(1)
 
-class Body:
-    def __init__(self, limbs={}):
-        self.limbs = limbs
+
+@dataclass
+class Body:  # Represents a body to be sent with HTTP requests.
+    limbs: dict = field(default_factory=dict)
 
     def get(self):
         return self.limbs

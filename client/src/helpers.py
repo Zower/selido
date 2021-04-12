@@ -6,9 +6,6 @@ import core
 
 from pathlib import Path
 
-
-# Constants
-
 # Classes
 
 
