@@ -100,7 +100,7 @@ def get(args):
     parsed = parse_response(r.text)
     items = helpers.items_from_list_of_dict(parsed['objects'])
 
-    printer = core.TagPrinter(items, print_only_tags=args.no_columns)
+    printer = core.TagPrinter(items, no_columns=args.no_columns)
     printer.print()
 
 
