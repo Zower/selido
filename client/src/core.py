@@ -180,7 +180,6 @@ class TagPrinter:
             if tag.key not in self.key_columns:
                 if not self.print_too_long(tag):
                     space = self.space(tag)
-                    print(space)
                     print(tag, end=space)
         # New line
         print()
