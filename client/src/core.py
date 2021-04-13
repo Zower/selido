@@ -31,9 +31,8 @@ class TagPrinter:
     space_between_tags: int  # Minimum space between tags
     no_columns: bool   # Only print tags, no columns, indices, ids, or anything else. key_columns still get printed for each item, but there is no top level identifier showing what the column was
     with_id: bool  # Print IDs
-    count: bool  # Whether to print amount of items
 
-    def __init__(self, resources, key_columns=None, indentation_level=15, space_between_tags=3, no_columns=False, with_id=False, count=False):
+    def __init__(self, resources, key_columns=None, indentation_level=15, space_between_tags=3, no_columns=False, with_id=False):
         self.resources = resources
         self.key_columns = key_columns
         self.indentation_level = indentation_level
@@ -43,22 +42,19 @@ class TagPrinter:
             self.space_between_tags = 3
         self.no_columns = no_columns
         self.with_id = with_id
-        self.count = count
 
         self.oc = Option()
 
     def print(self):
-
-        # Caculate length of string of the number of indices
+        # Calculate length of string of the number of indices
         max_index_length = len(str(len(self.resources)))
 
         self._print_columns(max_index_length)
 
         self._print_items(max_index_length)
 
-        # Count should be printed at the end
-        if self.count:
-            print("# of results: {}".format(len(self.resources)))
+    def count(self):
+        print("# of resources: {}".format(len(self.resources)))
 
     def _print_columns(self, max_index_length):
         # Columns should be printed

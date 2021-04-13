@@ -75,12 +75,16 @@ def find(args):
 
     if not args.indent:
         printer = core.TagPrinter(
-            items, no_columns=args.no_columns, key_columns=columns, count=args.count, with_id=args.with_id)
+            items, no_columns=args.no_columns, key_columns=columns, with_id=args.with_id)
 
     else:
         printer = core.TagPrinter(
-            items, no_columns=args.no_columns, key_columns=columns, indentation_level=int(args.indent), count=args.count, with_id=args.with_id)
+            items, no_columns=args.no_columns, key_columns=columns, indentation_level=int(args.indent), with_id=args.with_id)
+
     printer.print()
+
+    if args.count:
+        printer.count()
 
 
 def get(args):
