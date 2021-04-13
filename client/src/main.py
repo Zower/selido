@@ -49,10 +49,8 @@ parser_authenticate_request = parser_authenticate_sub.add_parser(
 parser_authenticate_request.add_argument(
     'name', help="The username of this client")
 parser_authenticate_request.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
-parser_authenticate_request.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
-)
+    '-u', '--url', help="URL:port to connect to", default=get_default_url(True))
+
 
 parser_authenticate_request.set_defaults(func=auth.request)
 

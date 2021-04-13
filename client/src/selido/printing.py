@@ -264,9 +264,9 @@ class Option:
         number = -1
         if amount > 0:
             i = 0
-            while i <= amount:
+            while i < amount:
                 print("{index}:{option}".format(
-                    index=str(i), option=self.options[i]))
+                    index=str(i + 1), option=self.options[i]))
                 i += 1
 
             if not message:

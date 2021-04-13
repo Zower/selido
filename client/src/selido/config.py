@@ -49,7 +49,7 @@ class SelidoConfig:
         return self.config.get('Cert.username')
 
     def get_endpoint(self, increment=0):
-        return "{}:{}".format(self.config.get('Endpoint.url'), self.config.get('Endpoint.port'))
+        return "{}:{}".format(self.config.get('Endpoint.url'), int(self.config.get('Endpoint.port')) + increment)
 
     def set_username(self, username):
         try:

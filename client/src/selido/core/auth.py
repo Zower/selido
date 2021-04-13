@@ -66,7 +66,7 @@ def authenticated_yet(args, body):
                       json=body,
                       verify=config.CERTS_LOCATION / 'ca.crt')
 
-    parsed = parsing.parse_response(r.text, False)
+    parsed = parsing.parse_response(r.text, False, False)
     if r.status_code == 200:
         try:
             with open(config.CERTS_LOCATION / (args.name + '.crt'), "w") as f:
