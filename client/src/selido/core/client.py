@@ -4,59 +4,54 @@ import os
 import platform
 import json
 
-import helpers
-import core
-
 from enum import Enum, auto
+from dataclasses import dataclass, field
 
+import selido.parsing as parsing
+from selido.printing import TagPrinter, resources_from_list_of_dict
 
 #############################################
 # Online commands
 
 
 def add(args):
-    args = helpers.check_defaults(args)
-
-    b = core.Body()
-    b.add('tags', helpers.make_tags(helpers.split_tags(args.tags)))
+    b = Body()
+    b.add('tags', _make_tags(_split_tags(args.tags)))
 
     r = send_request(args, Method.POST, '/resource/', b.get())
 
-    parse_response(r.text, True)
+    parsing.parse_response(r.text, True)
 
 
 def delete(args):
-    args = helpers.check_defaults(args)
+    parsed_ids = parsing.parse_ids(args.searchterm)
 
-    parsed_ids = helpers.parse_ids(args.searchterm)
-
-    b = core.Body()
+    b = Body()
     b.add('ids', parsed_ids)
 
     r = send_request(args, Method.DELETE, '/resource/', b.get())
 
-    parse_response(r.text, True)
+    parsing.parse_response(r.text, True)
 
 
 def find(args):
-    args = helpers.check_defaults(args)
-
-    b = core.Body()
+    b = Body()
 
     if args.all:
         b.add('all', args.all)
         r = send_request(args, Method.POST, '/find/', b.get())
     else:
-        parsed_search = helpers.parse_search_tags(args.searchterm)
+        parser = parsing.Search()
+        parser.parse_and_set_search_tags(args.searchterm)
 
-        tags = helpers.make_tags(parsed_search.tags)
-        b.add('keys', parsed_search.keys)
+        tags = _make_tags(parser.tags())
+        b.add('keys', parser.keys())
         b.add('tags', tags)
         b.add('and_search', not args.or_search)
 
         r = send_request(args, Method.POST, '/find/', b.get())
 
-    parsed = parse_response(r.text)
+    parsed = parsing.parse_response(r.text)
 
     exclude = []
     # if args.auto_exclude and args.tags:
@@ -66,7 +61,7 @@ def find(args):
         for t in args.exclude.split(','):
             exclude.append(t)
 
-    items = helpers.items_from_list_of_dict(
+    items = resources_from_list_of_dict(
         parsed['objects'], exclude, args.sort)
 
     columns = None
@@ -74,11 +69,11 @@ def find(args):
         columns = args.columns.split(",")
 
     if not args.indent:
-        printer = core.TagPrinter(
+        printer = TagPrinter(
             items, no_columns=args.no_columns, key_columns=columns, with_id=args.with_id)
 
     else:
-        printer = core.TagPrinter(
+        printer = TagPrinter(
             items, no_columns=args.no_columns, key_columns=columns, indentation_level=int(args.indent), with_id=args.with_id)
 
     if args.mcount:
@@ -92,35 +87,31 @@ def find(args):
 
 
 def get(args):
-    args = helpers.check_defaults(args)
+    parsed_ids = parsing.parse_ids(args.searchterm)
 
-    parsed_ids = helpers.parse_ids(args.searchterm)
-
-    b = core.Body()
+    b = Body()
     b.add('ids', parsed_ids)
 
     r = send_request(args, Method.GET, '/get/', b.get())
 
-    parsed = parse_response(r.text)
-    items = helpers.items_from_list_of_dict(parsed['objects'])
+    parsed = parsing.parse_response(r.text)
+    items = resources_from_list_of_dict(parsed['objects'])
 
-    printer = core.TagPrinter(items, no_columns=args.no_columns)
+    printer = TagPrinter(items, no_columns=args.no_columns)
     printer.print()
 
 
 def open_file(args):
-    args = helpers.check_defaults(args)
+    parsed_ids = parsing.parse_ids(args.searchterm)
 
-    parsed_ids = helpers.parse_ids(args.searchterm)
-
-    b = core.Body()
+    b = Body()
     parsed_ids = [parsed_ids[0]]
     b.add('ids', parsed_ids)
 
     r = send_request(args, Method.GET, '/get/', b.get())
 
-    parsed = parse_response(r.text)
-    item = helpers.items_from_list_of_dict(parsed['objects'])[0]
+    parsed = parsing.parse_response(r.text)
+    item = resources_from_list_of_dict(parsed['objects'])[0]
     for t in item.tags:
         if t.key == 'path':
             if platform.system() == 'Darwin':
@@ -132,55 +123,48 @@ def open_file(args):
 
 
 def add_tags(args):
-    args = helpers.check_defaults(args)
+    parsed_ids = parsing.parse_ids(args.searchterm)
 
-    parsed_ids = helpers.parse_ids(args.searchterm)
-
-    b = core.Body()
-    b.add('tags', helpers.make_tags(helpers.split_tags(args.tags)))
+    b = Body()
+    b.add('tags', _make_tags(_split_tags(args.tags)))
     b.add('ids', parsed_ids)
 
     r = send_request(args, Method.POST, '/tag/', b.get())
 
-    parse_response(r.text, True)
+    parsing.parse_response(r.text, True)
 
 
 def del_tags(args):
-    args = helpers.check_defaults(args)
+    parsed_ids = parsing.parse_ids(args.searchterm)
 
-    parsed_ids = helpers.parse_ids(args.searchterm)
-
-    b = core.Body()
-    b.add('tags', helpers.make_tags(helpers.split_tags(args.tags)))
+    b = Body()
+    b.add('tags', _make_tags(_split_tags(args.tags)))
     b.add('ids', parsed_ids)
 
     r = send_request(args, Method.DELETE, '/tag/', b.get())
 
-    parse_response(r.text, True)
+    parsing.parse_response(r.text, True)
 
 
 def copy_tags(args):
-    args = helpers.check_defaults(args)
+    from_ids = parsing.parse_ids(args.from_ids)
+    to_ids = parsing.parse_ids(args.to_ids)
 
-    from_ids = helpers.parse_ids(args.from_ids)
-    to_ids = helpers.parse_ids(args.to_ids)
-
-    b = core.Body()
+    b = Body()
     b.add('from', from_ids)
     b.add('to', to_ids)
 
     r = send_request(args, Method.PATCH, '/tag/', b.get())
 
-    parse_response(r.text, True)
+    parsing.parse_response(r.text, True)
 
 
 #############################################
-# Helpers
 
 def send_request(args, method, url, body=None):  # Mother send command
     s = requests.Session()
     s.verify = args.ca_file
-    s.cert = args.cert
+    s.cert = args.user_certs
     url = args.url + url
     try:
         if method == Method.GET and body:
@@ -202,26 +186,45 @@ def send_request(args, method, url, body=None):  # Mother send command
         exit(1)
     return r
 
-# Parse response as JSON, exit if code is not equal 200
 
-
-def parse_response(response, print_message=False, check_code=True):
-    parsed = json.loads(response)
-
-    if check_code and parsed['code'] != 200:
-        print("{code}: {message}".format(
-            code=parsed['code'], message=parsed['message']))
-        exit(0)
-    elif print_message:
-        print(parsed['message'])
-
-    return parsed
-
-
-#############################################
-# Classes
-class Method(Enum):  # Maybe more to be added later
+class Method(Enum):  # Enum representing HTTP request type
     GET = auto()
     POST = auto()
     DELETE = auto()
     PATCH = auto()
+
+
+@dataclass
+class Body:  # Represents a body to be sent with HTTP requests.
+    limbs: dict = field(default_factory=dict)
+
+    def get(self):
+        return self.limbs
+
+    def add(self, name, value):
+        self.limbs[name] = value
+
+    def remove(self, name):
+        return self.limbs.pop(name)
+
+
+def _split_tags(tags):  # Split tags on comma
+    if tags:
+        copy = tags.split(',')
+    return copy
+
+
+def _make_tags(tags):  # Make tags into json
+    tags_list = []
+    for tag in tags:
+        tag = tag.split(':', 1)
+
+        if len(tag) == 1:
+            tags_list.append({'key': tag[0]})
+        else:
+            if tag[1] != '':
+                tags_list.append({'key': tag[0], 'value': tag[1]})
+            else:
+                tags_list.append({'key': tag[0]})
+
+    return tags_list

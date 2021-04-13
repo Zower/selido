@@ -1,5 +1,5 @@
 import json
-import config
+import selido.config as config
 
 from typing import List
 from dataclasses import dataclass, field
@@ -218,7 +218,7 @@ class Option:
         indexed_options = self._options_indexed_dict()
         try:
             # Need to open in append mode as r+ will not create the file if it does not exist, a+ will.
-            with open(config.config_location / 'cache.json', 'a+') as f:
+            with open(config.CONFIG_LOCATION / 'cache.json', 'a+') as f:
                 # Seek to start of file, as append('a+') opens at the end.
                 f.seek(0)
                 old_raw = f.read()
@@ -312,7 +312,7 @@ class Option:
     # Opens cache.json and returns the contents as given by json.loads()
     def _get_cached(self):
         try:
-            with open(config.config_location / 'cache.json', 'r') as f:
+            with open(config.CONFIG_LOCATION / 'cache.json', 'r') as f:
                 cached = json.loads(f.read())
                 f.close()
                 return cached
@@ -321,15 +321,21 @@ class Option:
             exit(1)
 
 
-@dataclass
-class Body:  # Represents a body to be sent with HTTP requests.
-    limbs: dict = field(default_factory=dict)
+# Creates Resource types from a list of dictionaries, with each dictionary being one resource in the format returned from server, e.g. {'id': '2309f001FA0023123', 'tags': [{'key': 'test', 'value':'true'}]}
 
-    def get(self):
-        return self.limbs
 
-    def add(self, name, value):
-        self.limbs[name] = value
-
-    def remove(self, name):
-        return self.limbs.pop(name)
+def resources_from_list_of_dict(dict_list, keys_to_ignore=[], sort=False):
+    items = []
+    for item in dict_list:
+        tags = []
+        for tag in item['tags']:
+            if not tag['key'] in keys_to_ignore:
+                if 'value' in tag:
+                    tags.append(Tag(tag['key'], tag['value']))
+                else:
+                    tags.append(Tag(tag['key']))
+        items.append(Resource(item['id'], tags))
+        if sort:
+            # Forcing sort to use string representation of tag
+            tags.sort(key=lambda x: str(x))
+    return items
