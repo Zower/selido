@@ -81,7 +81,11 @@ def find(args):
         printer = core.TagPrinter(
             items, no_columns=args.no_columns, key_columns=columns, indentation_level=int(args.indent), with_id=args.with_id)
 
-    printer.print()
+    if args.mcount:
+        printer.mcount()
+
+    else:
+        printer.print()
 
     if args.count:
         printer.count()

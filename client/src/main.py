@@ -134,7 +134,7 @@ parser_find.add_argument(
     '--count', help="Count the number of instances returned", action='store_true'
 )
 parser_find.add_argument(
-    '--mcount', help="Count the number of instances returned, nothing is printed", action='store_true'
+    '--mcount', help="Count the number of instances returned, nothing else is printed", action='store_true'
 )
 parser_find.add_argument(
     '-w', '--with-id', help="Print IDs of the resources", action='store_true')

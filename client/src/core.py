@@ -56,6 +56,9 @@ class TagPrinter:
     def count(self):
         print("# of resources: {}".format(len(self.resources)))
 
+    def mcount(self):
+        print(len(self.resources))
+
     def _print_columns(self, max_index_length):
         # Columns should be printed
         if not self.no_columns:
