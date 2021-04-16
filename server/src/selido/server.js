@@ -67,7 +67,7 @@ module.exports = class SelidoServer {
             let ids = req.body.ids
             let answer = await this.db.get(ids)
 
-            this.verbose_print_answer(answer)
+            this.verbose_print_answer(answer, req.socket.getPeerCertificate(true).subject.CN)
             res.status(answer.code).send(answer)
         })
 
@@ -178,8 +178,8 @@ module.exports = class SelidoServer {
 
     }
 
-    verbose_print_answer(answer) {
-        this.verbose("Action " + answer.action + " gave results: ")
+    verbose_print_answer(answer, user) {
+        this.verbose("Action " + answer.action + " gave results from " + user + ": ")
         if (typeof answer.objects !== 'undefined') {
             this.verbose(JSON.stringify(answer.objects))
         }
