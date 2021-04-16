@@ -81,7 +81,7 @@ module.exports = class SelidoCert {
                                             await this.genClientCerts(un)
                                             this.verbose("Done.")
                                             if (copy == 'y') {
-                                                let printErr = function (err) { if (err) this.error(err) }
+                                                let printErr = err => { if (err) this.error(err) }
                                                 fs.unlink(this.path + un + '.csr', printErr)
                                                 var new_path = os.homedir() + '/.selido/certs/'
                                                 fs.mkdirSync(new_path, { recursive: true })
