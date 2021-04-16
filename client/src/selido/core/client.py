@@ -173,6 +173,7 @@ def send_request(args, method, url, body=None):  # Mother send command
     s = requests.Session()
     s.verify = args.ca_file
     s.cert = args.user_certs
+
     url = args.url + url
     try:
         if method == Method.GET and body:
