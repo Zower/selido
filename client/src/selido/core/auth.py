@@ -3,11 +3,12 @@ from threading import Timer
 import hashlib
 import urllib3
 
-import selido.parsing as parsing
 import selido.config as config
 
 from selido.core.client import Body, Method, send_request
-from selido.printing import TagPrinter, Option
+from selido.printing import TagPrinter
+from selido.options import Options
+from selido.parsing import SelidoParser
 
 
 def request(args):
@@ -16,9 +17,10 @@ def request(args):
 
     r = requests.get(args.url + '/authenticate/ca/', verify=False)
 
-    parsed = parsing.parse_response(r.text, False)
+    parser = SelidoParser(r.text)
+    ca = parser.parse_resources()
 
-    print_hash(parsed['objects'])
+    print_hash(ca)
 
     ans = input(
         "Type 'selido auth hash' on an authenticated machine, then make absolutely sure the two hashes match, if not, ABORT. Continue? (y/n): ")
@@ -26,7 +28,7 @@ def request(args):
     if ans == 'y':
         try:
             with open(config.CERTS_LOCATION / 'ca.crt', "w") as f:
-                f.write(parsed['objects'])
+                f.write(ca)
                 f.close()
         except OSError as e:
             print(e)
@@ -34,11 +36,13 @@ def request(args):
 
         a = requests.get(args.url + '/authenticate/' + args.name,
                          verify=config.CERTS_LOCATION / 'ca.crt')
-        parsed = parsing.parse_response(a.text, False)
+
+        parser = SelidoParser(r.text)
+        response = parser.parse()
 
         try:
             with open(config.CERTS_LOCATION / (args.name + '.key'), "w") as f:
-                f.write(parsed['objects']['key'])
+                f.write(response['objects']['key'])
                 f.close()
         except OSError as e:
             print(e)
@@ -46,7 +50,7 @@ def request(args):
 
         print("-------------------------------------------------------------------")
         print("Your code is: ", end='')
-        for code in parsed['objects']['code']:
+        for code in response['objects']['code']:
             print(code, end=" ")
         print()
         print("Type selido auth verify on an authenticated client.")
@@ -54,7 +58,7 @@ def request(args):
         print("Waiting for verification from authenticated client....")
 
         b = Body()
-        obj = {'name': args.name, 'code': parsed['objects']['code']}
+        obj = {'name': args.name, 'code': response['objects']['code']}
         b.add('code', obj)
 
         Timer(0.5, authenticated_yet, [
@@ -66,11 +70,13 @@ def authenticated_yet(args, body):
                       json=body,
                       verify=config.CERTS_LOCATION / 'ca.crt')
 
-    parsed = parsing.parse_response(r.text, False, False)
+    parser = SelidoParser(r.text)
+    response = parser.parse(False, False)
+
     if r.status_code == 200:
         try:
             with open(config.CERTS_LOCATION / (args.name + '.crt'), "w") as f:
-                f.write(parsed['objects'])
+                f.write(response['objects'])
             print("You are now verified!")
             exit(0)
         except OSError as e:
@@ -80,11 +86,11 @@ def authenticated_yet(args, body):
         # Still waiting
         Timer(0.5, authenticated_yet, [args, body]).start()
     elif r.status_code == 403:
-        print(parsed['message'])
+        print(response['message'])
         exit(1)
     else:
         print("Something went wrong, exiting")
-        print(parsed)
+        print(response)
         exit(1)
 
 
@@ -96,20 +102,20 @@ def hash(args):
 
 def verify(args):
     r = send_request(args, Method.GET, '/authenticate/')
-    parsed = parsing.parse_response(r.text, False)
 
-    oc = Option(parsed['objects'])
+    parser = SelidoParser(r.text)
+    resources = parser.parse_resources()
+
+    oc = Options(resources)
     send = oc.print_and_return_answer()
-
-    print(send)
 
     b = Body()
     b.add('code', send)
 
     p = send_request(
         args, Method.POST, '/authenticate/', b.get())
-    parsed = parsing.parse_response(p.text, False)
-    print(parsed['message'])
+    parser = SelidoParser(p.text)
+    parser.parse(True)
 
 
 #############################################

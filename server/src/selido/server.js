@@ -3,7 +3,7 @@ const log = require('../logger/log.js');
 const express = require('express');
 const https = require('https');
 var bodyParser = require('body-parser')
-var jsonParser = bodyParser.json()
+var jsonParser = bodyParser.json({ limit: '50mb' })
 
 const SelidoDB = require('./db.js');
 const SelidoAuth = require('./auth.js');

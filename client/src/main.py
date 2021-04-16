@@ -131,7 +131,7 @@ parser_find.add_argument(
 parser_find.add_argument(
     '-e', '--exclude', help="Comma-separated keys from the returned tag search to exclude in the printed output, e.g. if resource is 'foo:bar, testing', then 'find foo:bar -e foo:bar' would return 'testing'")
 parser_find.add_argument(
-    '-i', '--indent', help="# Indents between tag columns"
+    '-i', '--indent', help="# Indents between tag columns", default=15
 )
 parser_find.add_argument(
     '-s', '--sort', help="Sort the tags of the resources based on keys", action='store_true')
@@ -201,7 +201,7 @@ parser_tag_copy.add_argument(
 parser_tag_copy.add_argument(
     'to_ids', help='The ids to copy tags to, in comma-separated format. Also accepts previously cached indices.')
 parser_tag_copy.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_url())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
 parser_tag_copy.add_argument(
     '-u', '--url', help="URL:port to connect to", default=get_default_url())
 parser_tag_copy.add_argument(

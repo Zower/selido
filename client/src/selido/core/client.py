@@ -7,8 +7,8 @@ import json
 from enum import Enum, auto
 from dataclasses import dataclass, field
 
-import selido.parsing as parsing
-from selido.printing import TagPrinter, resources_from_list_of_dict
+from selido.parsing import SelidoParser, SearchTerm, parse_ids
+from selido.printing import TagPrinter
 
 #############################################
 # Online commands
@@ -16,69 +16,72 @@ from selido.printing import TagPrinter, resources_from_list_of_dict
 
 def add(args):
     b = Body()
+
     b.add('tags', _make_tags(_split_tags(args.tags)))
 
     r = send_request(args, Method.POST, '/resource/', b.get())
 
-    parsing.parse_response(r.text, True)
+    parser = SelidoParser(r.text)
+
+    parser.parse(r.text, True)
 
 
 def delete(args):
-    parsed_ids = parsing.parse_ids(args.searchterm)
+    parsed_ids = parse_ids(args.searchterm)
 
     b = Body()
     b.add('ids', parsed_ids)
 
     r = send_request(args, Method.DELETE, '/resource/', b.get())
 
-    parsing.parse_response(r.text, True)
+    parser = SelidoParser(r.text)
+
+    parser.parse(True)
 
 
 def find(args):
     b = Body()
 
+    search = SearchTerm(args.searchterm)
+
     if args.all:
         b.add('all', args.all)
         r = send_request(args, Method.POST, '/find/', b.get())
     else:
-        parser = parsing.Search()
-        parser.parse_and_set_search_tags(args.searchterm)
+        search.parse()
 
-        tags = _make_tags(parser.tags())
-        b.add('keys', parser.keys())
+        tags = _make_tags(search.tags())
+
+        b.add('keys', search.keys())
         b.add('tags', tags)
         b.add('and_search', not args.or_search)
 
         r = send_request(args, Method.POST, '/find/', b.get())
 
-    parsed = parsing.parse_response(r.text)
-
     exclude = []
-    # if args.auto_exclude and args.tags:
-    #     for t in args.tags.split(','):
-    #         exclude.append(t.split(':', 1)[0])
+
+    if args.auto_exclude:
+        for key in search.keys():
+            exclude.append(key)
+        for tag in search.tags():
+            exclude.append(tag.split(':', 1)[0])
+
     if args.exclude:
         for t in args.exclude.split(','):
             exclude.append(t)
 
-    items = resources_from_list_of_dict(
-        parsed['objects'], exclude, args.sort)
+    parser = SelidoParser(r.text)
+    resources = parser.parse_resources(exclude, args.sort)
 
-    columns = None
-    if args.columns:
+    columns = args.columns
+    if columns:
         columns = args.columns.split(",")
 
-    if not args.indent:
-        printer = TagPrinter(
-            items, no_columns=args.no_columns, key_columns=columns, with_id=args.with_id)
-
-    else:
-        printer = TagPrinter(
-            items, no_columns=args.no_columns, key_columns=columns, indentation_level=int(args.indent), with_id=args.with_id)
+    printer = TagPrinter(
+        resources, no_columns=args.no_columns, indentation_level=args.indent, key_columns=columns, with_id=args.with_id)
 
     if args.mcount:
         printer.mcount()
-
     else:
         printer.print()
 
@@ -87,22 +90,22 @@ def find(args):
 
 
 def get(args):
-    parsed_ids = parsing.parse_ids(args.searchterm)
+    parsed_ids = parse_ids(args.searchterm)
 
     b = Body()
     b.add('ids', parsed_ids)
 
     r = send_request(args, Method.GET, '/get/', b.get())
 
-    parsed = parsing.parse_response(r.text)
-    items = resources_from_list_of_dict(parsed['objects'])
+    parser = SelidoParser(r.text)
+    resources = parser.parse_resources()
 
-    printer = TagPrinter(items, no_columns=args.no_columns)
+    printer = TagPrinter(resources, no_columns=args.no_columns, with_id=True)
     printer.print()
 
 
 def open_file(args):
-    parsed_ids = parsing.parse_ids(args.searchterm)
+    parsed_ids = parse_ids(args.searchterm)
 
     b = Body()
     parsed_ids = [parsed_ids[0]]
@@ -110,8 +113,10 @@ def open_file(args):
 
     r = send_request(args, Method.GET, '/get/', b.get())
 
-    parsed = parsing.parse_response(r.text)
-    item = resources_from_list_of_dict(parsed['objects'])[0]
+    parser = SelidoParser(r.text)
+    resources = parser.parse_resources()
+
+    item = resources[0]
     for t in item.tags:
         if t.key == 'path':
             if platform.system() == 'Darwin':
@@ -123,7 +128,7 @@ def open_file(args):
 
 
 def add_tags(args):
-    parsed_ids = parsing.parse_ids(args.searchterm)
+    parsed_ids = parse_ids(args.searchterm)
 
     b = Body()
     b.add('tags', _make_tags(_split_tags(args.tags)))
@@ -131,11 +136,12 @@ def add_tags(args):
 
     r = send_request(args, Method.POST, '/tag/', b.get())
 
-    parsing.parse_response(r.text, True)
+    parser = SelidoParser(r.text)
+    parser.parse(True)
 
 
 def del_tags(args):
-    parsed_ids = parsing.parse_ids(args.searchterm)
+    parsed_ids = parse_ids(args.searchterm)
 
     b = Body()
     b.add('tags', _make_tags(_split_tags(args.tags)))
@@ -143,12 +149,13 @@ def del_tags(args):
 
     r = send_request(args, Method.DELETE, '/tag/', b.get())
 
-    parsing.parse_response(r.text, True)
+    parser = SelidoParser(r.text)
+    parser.parse(True)
 
 
 def copy_tags(args):
-    from_ids = parsing.parse_ids(args.from_ids)
-    to_ids = parsing.parse_ids(args.to_ids)
+    from_ids = parse_ids(args.from_ids)
+    to_ids = parse_ids(args.to_ids)
 
     b = Body()
     b.add('from', from_ids)
@@ -156,7 +163,8 @@ def copy_tags(args):
 
     r = send_request(args, Method.PATCH, '/tag/', b.get())
 
-    parsing.parse_response(r.text, True)
+    parser = SelidoParser(r.text)
+    parser.parse(True)
 
 
 #############################################
