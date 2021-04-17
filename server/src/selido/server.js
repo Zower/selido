@@ -77,7 +77,7 @@ module.exports = class SelidoServer {
             let tags = req.body.tags
             let answer = await this.db.find(keys, tags, req.body.and_search, req.body.all)
 
-            this.verbose_print_answer(answer)
+            this.verbose_print_answer(answer, req.socket.getPeerCertificate(true).subject.CN)
             res.status(answer.code).send(answer)
         })
 
@@ -86,7 +86,7 @@ module.exports = class SelidoServer {
             let tags = req.body.tags
             let answer = await this.db.add(tags)
 
-            this.verbose_print_answer(answer)
+            this.verbose_print_answer(answer, req.socket.getPeerCertificate(true).subject.CN)
             res.status(answer.code).send(answer)
         });
 
@@ -95,7 +95,7 @@ module.exports = class SelidoServer {
             let ids = req.body.ids
             let answer = await this.db.delete(ids)
 
-            this.verbose_print_answer(answer)
+            this.verbose_print_answer(answer, req.socket.getPeerCertificate(true).subject.CN)
             res.status(answer.code).send(answer)
         })
 
@@ -105,7 +105,7 @@ module.exports = class SelidoServer {
             let tags = req.body.tags
             let answer = await this.db.addTags(ids, tags)
 
-            this.verbose_print_answer(answer)
+            this.verbose_print_answer(answer, req.socket.getPeerCertificate(true).subject.CN)
             res.status(answer.code).send(answer)
         })
 
@@ -115,7 +115,7 @@ module.exports = class SelidoServer {
             let tags = req.body.tags
             let answer = await this.db.delTags(ids, tags)
 
-            this.verbose_print_answer(answer)
+            this.verbose_print_answer(answer, req.socket.getPeerCertificate(true).subject.CN)
             res.status(answer.code).send(answer)
         })
 
@@ -124,7 +124,7 @@ module.exports = class SelidoServer {
             let toIds = req.body.to
             let answer = await this.db.copyTags(fromIds, toIds)
 
-            this.verbose_print_answer(answer)
+            this.verbose_print_answer(answer, req.socket.getPeerCertificate(true).subject.CN)
             res.status(answer.code).send(answer)
         })
 
