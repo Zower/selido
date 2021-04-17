@@ -18,9 +18,9 @@ def request(args):
     r = requests.get(args.url + '/authenticate/ca/', verify=False)
 
     parser = SelidoParser(r.text)
-    ca = parser.parse_resources()
+    ca = parser.parse()
 
-    print_hash(ca)
+    print_hash(ca['objects'])
 
     ans = input(
         "Type 'selido auth hash' on an authenticated machine, then make absolutely sure the two hashes match, if not, ABORT. Continue? (y/n): ")
@@ -28,7 +28,7 @@ def request(args):
     if ans == 'y':
         try:
             with open(config.CERTS_LOCATION / 'ca.crt', "w") as f:
-                f.write(ca)
+                f.write(ca['objects'])
                 f.close()
         except OSError as e:
             print(e)
@@ -37,7 +37,7 @@ def request(args):
         a = requests.get(args.url + '/authenticate/' + args.name,
                          verify=config.CERTS_LOCATION / 'ca.crt')
 
-        parser = SelidoParser(r.text)
+        parser = SelidoParser(a.text)
         response = parser.parse()
 
         try:
@@ -104,9 +104,9 @@ def verify(args):
     r = send_request(args, Method.GET, '/authenticate/')
 
     parser = SelidoParser(r.text)
-    resources = parser.parse_resources()
+    resources = parser.parse()
 
-    oc = Options(resources)
+    oc = Options(resources['objects'])
     send = oc.print_and_return_answer()
 
     b = Body()
