@@ -20,24 +20,6 @@ class SelidoConfig:
     config: ConfigFile
 
     # Argparse specific
-    def init(self):  # Should be more robust
-        try:
-            Path(CONFIG_LOCATION).mkdir(parents=True, exist_ok=True)
-            Path(CERTS_LOCATION).mkdir(parents=True, exist_ok=True)
-        except FileExistsError:
-            print('Config file directory or certs directory already exists')
-            exit(1)
-
-        e = input(
-            "Where to connect to selido? If running locally it is likely \"https://localhost:3912\": ")
-        self.set_endpoint(e)
-
-        u = input(
-            "Type an identifying username: ")
-
-        self.set_username(u)
-
-    # Argparse specific
     def endpoint(self, args):
         self.set_endpoint(args.url)
 
@@ -92,7 +74,36 @@ def get_config():
             "Config file extension that isn't supported was used or is a directory"
         )
         exit(1)
-    except FileNotFoundError:
-        print('Configuration file wasnt found at location {}, maybe run selido init?'.format(
+    except FileNotFoundError as e:
+        print('Configuration file wasnt found at location {}'.format(
             str(CONFIG_LOCATION)))
+        _init()
+
+
+def _init():  # Should be more robust
+    print("First time setup being performed..")
+    try:
+        Path(CONFIG_LOCATION).mkdir(parents=True, exist_ok=True)
+        Path(CERTS_LOCATION).mkdir(parents=True, exist_ok=True)
+    except FileExistsError:
+        print('Config file directory or certs directory already exists')
         exit(1)
+
+    try:
+        f = open(CONFIG_LOCATION / CONFIG_NAME, "x")
+        config = ConfigFile(CONFIG_LOCATION / CONFIG_NAME)
+        f.close()
+    except OSError as e:
+        print(e)
+        exit(1)
+
+    config_parser = SelidoConfig(config)
+
+    e = input(
+        "Where to connect to selido? If running locally it is likely \"https://localhost:3912\": ")
+    config_parser.set_endpoint(e)
+
+    u = input(
+        "Type an identifying username: ")
+
+    config_parser.set_username(u)

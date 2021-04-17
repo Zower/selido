@@ -103,6 +103,7 @@ def get_default_ca():
 
 def get_default_certs():
     conf = config.SelidoConfig(config.get_config())
+
     un = conf.get_username()
     return (config.CERTS_LOCATION / (un + '.crt'),
             config.CERTS_LOCATION / (un + '.key'))
@@ -122,17 +123,15 @@ def parse_ids(search_term):  # Parses multiple ids, checking if its a regular ID
         if len(value) == 24:
             ids.append(value)
         else:
-            ids.append(oc.find_cached(value))
+            try:
+                ids.append(oc.find_cached(value))
+            except KeyError:
+                print("No matching cache hit for {}".format(value))
 
     return ids
 
 ###########################
 # Response parsing
-
-# Parse response from json to dict
-
-
-# Creates Resource types from a list of dictionaries, with each dictionary being one resource in the format returned from server, e.g. {'id': '2309f001FA0023123', 'tags': [{'key': 'test', 'value':'true'}]}
 
 
 @dataclass

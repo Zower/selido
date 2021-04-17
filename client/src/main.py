@@ -6,6 +6,10 @@ from selido.parsing import get_default_ca, get_default_certs, get_default_url
 
 config_parser = config.SelidoConfig(config.get_config())
 
+default_ca = get_default_ca()
+default_certs = get_default_certs()
+default_url = get_default_url()
+
 parser = argparse.ArgumentParser(
     prog='Selido client',
     description='Client to interact with selido server',
@@ -26,11 +30,11 @@ parser_add = subparsers.add_parser('add',
                                    help='Add a resource to selido')
 parser_add.add_argument('tags', help='The tags to add')
 parser_add.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_add.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_add.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 
@@ -58,11 +62,11 @@ parser_authenticate_request.set_defaults(func=auth.request)
 parser_authenticate_verify = parser_authenticate_sub.add_parser(
     'verify', aliases=['v'], help='Verify an authentication code (Requires previous authentication)')
 parser_authenticate_verify.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_authenticate_verify.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_authenticate_verify.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_authenticate_verify.set_defaults(func=auth.verify)
@@ -72,7 +76,7 @@ parser_authenticate_hash = parser_authenticate_sub.add_parser(
     'hash', aliases=['h'], help='Get the hash of current ca file')
 
 parser_authenticate_hash.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_authenticate_hash.set_defaults(func=auth.hash)
@@ -85,11 +89,11 @@ parser_delete = subparsers.add_parser('delete',
 parser_delete.add_argument(
     'searchterm', help='The ids to delete, in comma-separated format. Also accepts previously cached indices.')
 parser_delete.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_delete.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_delete.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_delete.set_defaults(func=client.delete)
@@ -105,11 +109,11 @@ parser_get.add_argument(
     '-N', '--no-columns', help="Dont print top level columns in output", action='store_true'
 )
 parser_get.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_get.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_get.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_get.set_defaults(func=client.get)
@@ -147,11 +151,11 @@ parser_find.add_argument(
 parser_find.add_argument(
     '-w', '--with-id', help="Print IDs of the resources", action='store_true')
 parser_find.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_find.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_find.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_find.set_defaults(func=client.find)
@@ -169,11 +173,11 @@ parser_tag_add.add_argument(
     'searchterm', help='The ids to add tags to, in comma-separated format. Also accepts previously cached indices.')
 parser_tag_add.add_argument('tags', help='The tags to apply')
 parser_tag_add.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_tag_add.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_tag_add.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_tag_add.set_defaults(func=client.add_tags)
@@ -185,11 +189,11 @@ parser_tag_del.add_argument(
     'searchterm', help='The ids to delete the tags from, in comma-separated format. Also accepts previously cached indices.')
 parser_tag_del.add_argument('tags', help='The tags to delete')
 parser_tag_del.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_tag_del.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_tag_del.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_tag_del.set_defaults(func=client.del_tags)
@@ -201,11 +205,11 @@ parser_tag_copy.add_argument(
 parser_tag_copy.add_argument(
     'to_ids', help='The ids to copy tags to, in comma-separated format. Also accepts previously cached indices.')
 parser_tag_copy.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_tag_copy.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_tag_copy.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_tag_copy.set_defaults(func=client.copy_tags)
@@ -218,11 +222,11 @@ parser_open.add_argument(
     'searchterm', help='The id to open. Also accepts previously cached indices.'
 )
 parser_open.add_argument(
-    '-u', '--url', help="URL:port to connect to", default=get_default_url())
+    '-u', '--url', help="URL:port to connect to", default=default_url)
 parser_open.add_argument(
-    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=get_default_certs())
+    '-U', '--user-certs', help="Key and certificate to use for authentication, in the format: full cert path,full key path", default=default_certs)
 parser_open.add_argument(
-    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=get_default_ca()
+    '-C', '--ca-file', help="Full path of the CA.crt file to use", default=default_ca
 )
 
 parser_open.set_defaults(func=client.open_file)
@@ -247,9 +251,6 @@ parser_conf_username = parser_conf_sub.add_parser('username', aliases=[
 parser_conf_username.add_argument(
     'username', help='The username that was specified when creating this client key, if filename is ~/.selido/certs/foo.crt, this setting should be \'foo\'')
 parser_conf_username.set_defaults(func=config_parser.username)
-
-parser_init = subparsers.add_parser('init', help='Initial config of selido')
-parser_init.set_defaults(func=config_parser.init)
 
 args = parser.parse_args()
 
