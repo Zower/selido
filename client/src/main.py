@@ -135,7 +135,7 @@ parser_find.add_argument(
 parser_find.add_argument(
     '-e', '--exclude', help="Comma-separated keys from the returned tag search to exclude in the printed output, e.g. if resource is 'foo:bar, testing', then 'find foo:bar -e foo:bar' would return 'testing'")
 parser_find.add_argument(
-    '-i', '--indent', help="# Indents between tag columns", default=15
+    '-i', '--indent', help="# Indents between tag columns", default=15, type=int
 )
 parser_find.add_argument(
     '-s', '--sort', help="Sort the tags of the resources based on keys", action='store_true')
