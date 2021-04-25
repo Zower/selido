@@ -254,4 +254,6 @@ parser_conf_username.set_defaults(func=config_parser.username)
 
 args = parser.parse_args()
 
+print(args)
+
 args.func(args)

@@ -20,7 +20,10 @@ class TagPrinter:
     def __init__(self, resources, key_columns=None, indentation_level=15, space_between_tags=3, no_columns=False, with_id=False):
         self.resources = resources
         self.key_columns = key_columns
-        self.indentation_level = indentation_level
+        if indentation_level >= 3:
+            self.indentation_level = indentation_level
+        else:
+            self.indentation_level = 3
         if space_between_tags >= 3:
             self.space_between_tags = space_between_tags
         else:
