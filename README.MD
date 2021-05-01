@@ -55,7 +55,7 @@ pip3 install requests,config_file[toml]
 ```
 and then type
 ```shell
-python3 src/main.py init
+python3 src/main.py <any command>(e.g. python3 src/main.py add hello:world!)
 ```
 (on Windows, exclude the "3" in python and pip). When prompted for a username, make sure you type the same as when you where asked for a username on the server side.
 
