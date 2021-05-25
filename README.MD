@@ -10,6 +10,9 @@ It is not neccessary to run both the client and the server, they are independent
 
 # Setup
 
+## Kubernetes
+The Kubernetes section of the server was created for an earlier version of the program, and probably doesn't work in the current state. Most of the baseline still works though, it's mostly the setup that would fail. I will have to adress this by making the setup optional, but this is not currently implemented.
+
 ## Mongo
 You will need to run an instance of mongo yourself. I recommend Docker, but it should work if you just run mongo any way you like.
 
