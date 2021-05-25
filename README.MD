@@ -1,5 +1,5 @@
 # Selido client and server
-Selido is an application for storing aribtrary resources in a key:value format (tags), with various features to search through those tags.
+Selido is an application for storing aribtrary resources in a key:value format (tags), with various features to search through those tags. It was created mostly as a learning process for myself.
 # About
 Selido has three components: 
 * One server that manages storing and searching through tags
@@ -11,7 +11,7 @@ It is not neccessary to run both the client and the server, they are independent
 # Setup
 
 ## Mongo
-You will need to run an instance of mongo yourself. I recommend Docker, but it should work if you just run mongo any way you like on port 27017.
+You will need to run an instance of mongo yourself. I recommend Docker, but it should work if you just run mongo any way you like.
 
 ### Docker
 If you use docker, here is the official mongo image: https://hub.docker.com/_/mongo. 
@@ -34,7 +34,7 @@ Replace the password with anything you like, or remove the two "-e" options if y
 * Ubuntu: https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/
 
 ## Server
-I recommend running the server on a linux machine, (Todo, add use the docker image here) but it should work on Windows aswell. You will **need** the "openssl" program installed on the machine where you run the server, as this is used for authentication. Most regular linux distributions come with openssl, but if not, you can install it through your preferred package manager. On Windows, I recommend chocolatey: https://chocolatey.org/install and the openssl package: https://chocolatey.org/packages/openssl
+I recommend running the server on a linux machine, but it should work on Windows aswell. You will **need** the "openssl" program installed on the machine where you run the server, as this is used for authentication. Most regular linux distributions come with openssl, but if not, you can install it through your preferred package manager. On Windows, I recommend chocolatey: https://chocolatey.org/install and the openssl package: https://chocolatey.org/packages/openssl
 
 Once openssl is installed, you will need node as well. 
 * Windows: https://nodejs.org/en/download/
@@ -64,5 +64,3 @@ The config file and certificates are stored in \<home>/.selido/. The config file
 # Usage
 
 Use the -h option when starting either the server or the client, to receive descriptions of the commands.
-
-Todo
